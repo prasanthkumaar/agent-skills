@@ -6,7 +6,9 @@ Embed images in the **PR description only** via GitHub's `user-attachments` CDN.
 
 ```bash
 gh auth status -h github.com
-gh extension install github/gh-image   # or: gh extension upgrade gh-image
+gh extension list | grep image          # e.g. drogers0/gh-image
+gh extension install drogers0/gh-image  # if missing
+gh extension upgrade gh-image           # if outdated
 gh image --help
 ```
 

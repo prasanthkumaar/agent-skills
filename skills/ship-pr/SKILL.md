@@ -74,7 +74,7 @@ If any section is missing, stop and fill gaps with the user before coding.
 
 → [resources/host-screenshots.md](resources/host-screenshots.md)
 
-- [ ] Upload; embed `user-attachments` or release-asset URLs in description.
+- [ ] Upload via `gh image`; embed `user-attachments` URLs in description.
 - [ ] Do not leave PNGs in the working tree for commit.
 
 ### 6. Compose PR body
