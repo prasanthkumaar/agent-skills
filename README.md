@@ -19,30 +19,40 @@ address-pr-review  →  updated PR after review comments
 | [ship-pr](skills/ship-pr/SKILL.md) | Locked spec → implement → verify → screenshot → open PR |
 | [address-pr-review](skills/address-pr-review/SKILL.md) | Review comments → interview → fix/reply → refresh all evidence |
 
-## Install (local)
+Install **both** for the full loop. `address-pr-review` re-runs the `ship-pr` verification pipeline after fixes.
 
-Symlink or copy into your agent skills directory, e.g.:
+## Install (skills.sh)
 
 ```bash
-ln -sf "$PWD/skills/ship-pr" ~/.claude/skills/ship-pr
-ln -sf "$PWD/skills/address-pr-review" ~/.claude/skills/address-pr-review
+# From GitHub (after push)
+npx skills add prasanthkumaar/agent-skills@ship-pr -g -y -a cursor
+npx skills add prasanthkumaar/agent-skills@address-pr-review -g -y -a cursor
+
+# From local clone (while iterating)
+npx skills add ~/Desktop/repos/agent-skills \
+  -s ship-pr -s address-pr-review -g -y -a cursor
 ```
 
-Or publish via [skills.sh](https://skills.sh/) when ready.
+Remove superseded skill:
+
+```bash
+npx skills remove pr-review-cycle -g -y
+```
+
+Update after push:
+
+```bash
+npx skills update ship-pr address-pr-review -g -y
+```
+
+## Cross-skill composition
+
+Skills do **not** link across folders with relative paths. `address-pr-review` refers to `ship-pr` by name only (Matt Pocock pattern).
 
 ## Replaced
 
-- `pr-review-cycle` → superseded by `address-pr-review`
-
-## Cross-skill composition (Matt Pocock pattern)
-
-Skills do **not** link to each other with relative file paths (`../other-skill/...`).
-
-- **Within a skill:** sibling files under `resources/` (or flat `.md` next to `SKILL.md`).
-- **Between skills:** prose only — e.g. "`address-pr-review` re-runs the `ship-pr` verification pipeline".
-- **Optional repo setup:** Matt uses a `setup-*` skill that writes `docs/agents/*.md` per repo; these PR skills stay repo-agnostic and discover commands from the target repo at runtime.
-
-Install both `ship-pr` and `address-pr-review` for the full loop.
+- `pr-review-cycle` → `address-pr-review`
+- `gh-address-comments` → folded into `address-pr-review` (optional to uninstall)
 
 ## Related (not in this repo)
 
