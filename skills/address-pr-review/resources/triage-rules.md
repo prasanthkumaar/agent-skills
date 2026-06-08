@@ -2,6 +2,8 @@
 
 Classify each review thread before acting.
 
+**All thread replies** (fix, reply-only, defer, bot pushback) must start with `@login` from the comment author — see [fetch-comments.md](fetch-comments.md).
+
 ## Straightforward fix → implement
 
 All must be true:
@@ -10,7 +12,7 @@ All must be true:
 - No product tradeoff (e.g. "lock vs allow edit" is **not** straightforward).
 - Fix fits PR scope.
 
-Action: fix → test affected matrix rows → reply with commit/file reference.
+Action: fix → test affected matrix rows → reply `@login` + commit/file reference.
 
 ## Tradeoff → stop and ask
 
@@ -29,19 +31,19 @@ Action: present 2–3 options with tradeoffs + sample code/snippet; **wait** for
 - Already fixed in latest commit.
 - Question answered by docs or PR description.
 
-Action: draft reply; user approves; post. Still refresh evidence if description changed.
+Action: draft reply starting with `@login`; user approves; post. Still refresh evidence if description changed.
 
 ## Defer → acknowledge
 
 - Out of scope for this PR.
 - Follow-up issue needed.
 
-Action: reply with defer rationale; offer follow-up issue if user wants.
+Action: reply `@login` + defer rationale; offer follow-up issue if user wants.
 
 ## Bot comments
 
 - Validate claim against code and tests — do not blindly apply.
-- If invalid: reply explaining why, with evidence.
+- If invalid: reply `@login` explaining why, with evidence.
 - If valid: same as straightforward fix.
 
 ## Priority

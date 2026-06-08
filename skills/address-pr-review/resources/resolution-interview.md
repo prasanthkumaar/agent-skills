@@ -51,9 +51,11 @@ Only when relevant:
 Keep a running log for the final summary:
 
 ```text
-Thread 3372726489 → Option A (guard on shared→settled) → commit abc123
-Thread 3372726495 → Reply only (honour system intentional)
+Thread 3372726489 (@chatgpt-codex-connector) → fix → commit abc123 → reply posted
+Thread 3372726495 (@coderabbitai) → reply only → honour system intentional
 ```
+
+When posting replies, always use the `@login` recorded for that thread.
 
 ## After interview
 
