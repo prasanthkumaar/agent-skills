@@ -23,6 +23,7 @@ If any section is missing, stop and fill gaps with the user before coding.
 - **Verify before push.** Do not declare the environment blocked until [resources/env-bootstrap.md](resources/env-bootstrap.md) is exhausted.
 - **Evidence before PR.** Every happy-path and edge-case row needs a passing check **and** a full-page screenshot.
 - **Screenshots in the description only.** Upload via `gh image` (`user-attachments` CDN). Never commit PNGs. See [resources/host-screenshots.md](resources/host-screenshots.md).
+- **Ephemeral artifacts in OS temp.** Screenshots, temporary Playwright specs, PR body drafts, and similar outputs go under `$TMPDIR` (or `$TEMP` / `/tmp`) — not the repo workspace. See [resources/temp-artifacts.md](resources/temp-artifacts.md).
 - **Follow the repo PR template** if one exists; otherwise use [resources/pr-body.md](resources/pr-body.md).
 - **No meta references** to how the spec was produced (no "grill", "interview", "prototype canvas", etc.) in commits, PR title, or body.
 - **Stacked PRs:** use `git push --force-with-lease`, never bare `--force`. See [resources/git-push.md](resources/git-push.md).
@@ -33,6 +34,7 @@ If any section is missing, stop and fill gaps with the user before coding.
 - Cropping screenshots to a single component instead of the full screen the reviewer will see.
 - Posting screenshots as a PR comment instead of embedding them in the description.
 - Committing screenshot files to git.
+- Writing PNGs, temp Playwright specs, or PR body drafts into the repo workspace (use OS temp — see [resources/temp-artifacts.md](resources/temp-artifacts.md)).
 - Skipping edge cases that were locked in the spec.
 - Assuming stack-specific env tooling without reading the repo first.
 
@@ -65,17 +67,19 @@ If any section is missing, stop and fill gaps with the user before coding.
 
 ### 4. Capture screenshots
 
-→ [resources/capture-screenshots.md](resources/capture-screenshots.md)
+→ [resources/capture-screenshots.md](resources/capture-screenshots.md)  
+→ [resources/temp-artifacts.md](resources/temp-artifacts.md)
 
 - [ ] Full viewport or fullPage — both columns / full screen, not a cropped card.
 - [ ] One screenshot per matrix row (or grouped table in description).
+- [ ] Save captures under `$EVIDENCE_DIR/shots/` (OS temp, not the repo).
 
 ### 5. Host screenshots
 
 → [resources/host-screenshots.md](resources/host-screenshots.md)
 
 - [ ] Upload via `gh image`; embed `user-attachments` URLs in description.
-- [ ] Do not leave PNGs in the working tree for commit.
+- [ ] Do not leave PNGs or temp specs in the working tree for commit.
 
 ### 6. Compose PR body
 

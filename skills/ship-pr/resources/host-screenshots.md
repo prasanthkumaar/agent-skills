@@ -45,14 +45,15 @@ gh image --help
 
 ## Upload
 
-From repo root, after captures land in `shots/`:
+After captures land in `$EVIDENCE_DIR/shots/` (see [temp-artifacts.md](temp-artifacts.md)):
 
 ```bash
+EVIDENCE_DIR="${TMPDIR:-${TEMP:-/tmp}}/cursor-pr-evidence-$(git branch --show-current | tr '/' '-')"
 OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
 
 gh image --repo "$OWNER_REPO" \
-  shots/H1-review-gate.png \
-  shots/H2-pay-guest.png
+  "$EVIDENCE_DIR/shots/H1-review-gate.png" \
+  "$EVIDENCE_DIR/shots/H2-pay-guest.png"
   # … all matrix IDs …
 ```
 
@@ -81,11 +82,11 @@ Captured locally on branch `<branch>` (<date>). Full-page, desktop viewport.
 ## Rules
 
 - URLs live in the **description**, not PR comments.
-- Delete local `shots/` before commit; add `shots/` to `.gitignore` if recurring.
+- Artifacts stay in `$EVIDENCE_DIR` (OS temp) — never commit PNGs or temp specs.
 - On refresh, update **every** screenshot URL even if the image looks unchanged.
 
 ## Update existing PR
 
-1. Re-upload all PNGs via `gh image`.
-2. Rewrite Screenshots tables in a body file.
-3. `gh pr edit <num> --body-file /tmp/pr-body.md`
+1. Re-upload all PNGs from `$EVIDENCE_DIR/shots/` via `gh image`.
+2. Rewrite Screenshots tables in `$EVIDENCE_DIR/pr-body.md`.
+3. `gh pr edit <num> --body-file "$EVIDENCE_DIR/pr-body.md"`

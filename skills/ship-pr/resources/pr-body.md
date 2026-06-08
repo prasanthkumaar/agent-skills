@@ -59,7 +59,9 @@ Preserve template headings the repo expects (e.g. CodeRabbit config blocks, chec
 
 ## Edit vs create
 
-- **Create:** `gh pr create --base main --head <branch> --title "…" --body-file /tmp/pr-body.md`
-- **Update:** `gh pr edit <num> --body-file /tmp/pr-body.md`
+Use `$EVIDENCE_DIR/pr-body.md` (OS temp — see [temp-artifacts.md](temp-artifacts.md)):
+
+- **Create:** `gh pr create --base main --head <branch> --title "…" --body-file "$EVIDENCE_DIR/pr-body.md"`
+- **Update:** `gh pr edit <num> --body-file "$EVIDENCE_DIR/pr-body.md"`
 
 Use `--body-file` (heredoc) to preserve markdown tables.
