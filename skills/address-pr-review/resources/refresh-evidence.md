@@ -14,7 +14,7 @@ Skip only when **reply-only** resolutions with zero code or description changes 
 
 ## Approach
 
-Re-run the **`ship-pr` verification pipeline** (steps 2–6 of that skill): bootstrap env → verify matrix → capture screenshots → host via `gh image` → update PR body.
+Re-run the **`ship-pr` verification pipeline** (steps 2–6 of that skill): bootstrap env → verify matrix → capture screenshots → host via `gh image` → update PR body. Use OS temp for screenshots and drafts (`ship-pr` → temp-artifacts).
 
 Both skills should be installed. Do not link across skill folders — load `ship-pr` and follow its resource files for the mechanical steps. This file is the **when and what** checklist for review passes.
 
@@ -59,9 +59,11 @@ Follow `ship-pr` → compose PR body.
 - Optional note: `Evidence refreshed after review pass (<date>, commit <sha>).`
 
 ```bash
-gh pr view {n} --json body -q .body > /tmp/pr-body.md
+EVIDENCE_DIR="${TMPDIR:-${TEMP:-/tmp}}/cursor-pr-evidence-$(git branch --show-current | tr '/' '-')"
+mkdir -p "$EVIDENCE_DIR"
+gh pr view {n} --json body -q .body > "$EVIDENCE_DIR/pr-body.md"
 # … edit …
-gh pr edit {n} --body-file /tmp/pr-body.md
+gh pr edit {n} --body-file "$EVIDENCE_DIR/pr-body.md"
 ```
 
 ### 7. Push

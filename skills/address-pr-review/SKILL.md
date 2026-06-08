@@ -19,7 +19,7 @@ Take an open PR with review feedback and return it to **evidence-complete** stat
 - **Tradeoffs → stop.** Present options, tradeoffs, sample code; wait for choice. See [resources/triage-rules.md](resources/triage-rules.md).
 - **After any code change:** re-run the **entire** evidence matrix from the PR description and re-capture **all** screenshots (even if unchanged). See [resources/refresh-evidence.md](resources/refresh-evidence.md).
 - **Update the PR description**, not a comment, for Test plan and Screenshots sections.
-- **Reply on every addressed thread** — start the body with the reviewer's **GitHub `@login`** from the comment (e.g. `@claude`, `@chatgpt-codex-connector`, `@coderabbitai`), then what changed (commit, file, or explanation). Never reply without the `@` handle.
+- **Reply on every addressed thread** — start with the reviewer's **GitHub handle** (`@claude`, `@chatgpt-codex-connector`, `@coderabbitai`, …). Use the `USER:` value from fetch output (`user.login`), not the display name. Then state what changed (commit, file, or explanation). Never reply without `@handle`.
 - **Do not resolve review threads** unless the user explicitly asks.
 - **Scope:** fixes map to a comment or the PR's stated goal — no opportunistic refactors.
 
@@ -29,7 +29,7 @@ Take an open PR with review feedback and return it to **evidence-complete** stat
 - Posting new screenshots only as a PR comment.
 - Auto-fixing tradeoff comments without user input.
 - Resolving GitHub threads without being asked.
-- Replying on a thread **without** the reviewer's `@login` at the start of the message.
+- Replying on a thread **without** the reviewer's `@handle` at the start of the message.
 - Rewriting unrelated sections of the PR description.
 
 ## Workflow
@@ -70,7 +70,7 @@ Ask one thread at a time when multiple resolutions differ.
 
 → [resources/refresh-evidence.md](resources/refresh-evidence.md)
 
-Re-run the **`ship-pr` verification pipeline** (bootstrap → matrix → screenshots → `gh image` → update body). Load `ship-pr` for the step-by-step resources.
+Re-run the **`ship-pr` verification pipeline** (bootstrap → matrix → screenshots → `gh image` → update body). Load `ship-pr` for the step-by-step resources. Ephemeral artifacts (screenshots, temp Playwright specs, PR body drafts) go to OS temp — see `ship-pr` → temp-artifacts.
 
 - [ ] Re-bootstrap env if needed.
 - [ ] Re-run **all** matrix rows from PR description.
@@ -82,15 +82,15 @@ Re-run the **`ship-pr` verification pipeline** (bootstrap → matrix → screens
 
 Follow `ship-pr` push policy (`--force-with-lease` when updating the PR branch).
 
-For each thread, post a reply that **begins with `@login`** (from fetch output), whether you fixed code or are explaining/deferring only.
+For each thread, post a reply that **begins with the reviewer's `@handle`** (from fetch `USER:`), whether you fixed code or are explaining/deferring only.
 
 - [ ] `git push --force-with-lease` when updating branch.
-- [ ] Post reply on each addressed thread — body **starts with `@login`** from that thread's author (see [resources/fetch-comments.md](resources/fetch-comments.md)).
+- [ ] Post reply on each addressed thread — body **starts with `@handle`** (see [resources/fetch-comments.md](resources/fetch-comments.md)).
 - [ ] Leave threads unresolved unless told otherwise.
 
 ### 7. Exit checklist
 
-- [ ] Every thread has a reply or explicit defer note — each reply **starts with `@login`**.
+- [ ] Every thread has a reply or explicit defer note — each reply **starts with the reviewer's `@handle`**.
 - [ ] PR description Test plan reflects latest run (date/command/result).
 - [ ] PR description Screenshots section has current URLs.
 - [ ] No scope creep beyond review feedback + PR goal.

@@ -55,7 +55,7 @@ Thread 3372726489 (@chatgpt-codex-connector) → fix → commit abc123 → reply
 Thread 3372726495 (@coderabbitai) → reply only → honour system intentional
 ```
 
-When posting replies, always use the `@login` recorded for that thread.
+When posting replies, always tag the **reviewer handle** recorded for that thread (e.g. `@chatgpt-codex-connector`).
 
 ## After interview
 

@@ -61,8 +61,8 @@ After fixing **or** reply-only (explain / defer / reject), post on the **inline*
 ### Rule
 
 1. Read `USER:` from the fetch output for that thread (e.g. `claude`, `chatgpt-codex-connector`, `coderabbitai[bot]`).
-2. Start the reply body with `@login` — use the GitHub username, not display name.
-3. For bot apps, use the login GitHub shows (`coderabbitai`, not `CodeRabbit`).
+2. Start the reply with the reviewer's **GitHub handle**: `@` + that username (not display name).
+3. For bot apps, use the login GitHub shows (`@coderabbitai`, not `@CodeRabbit`).
 
 ### Examples
 
