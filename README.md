@@ -4,34 +4,15 @@ Personal agent skills (private repo). Installed globally into `~/.agents/skills/
 
 **Clone location:** `~/ai/agent-skills`
 
-## Skills
-
-| Skill | Purpose |
-|-------|---------|
-| [ship-pr](skills/ship-pr/SKILL.md) | Locked spec → PR with verified evidence |
-| [triage-pr-comments](skills/triage-pr-comments/SKILL.md) | Classify PR review feedback (read-only) |
-| [address-pr-review](skills/address-pr-review/SKILL.md) | Review loop: triage → user OK → act → poll |
-| [code-writing](skills/code-writing/SKILL.md) | TypeScript style guide |
-| [deep-research](skills/deep-research/SKILL.md) | Multi-source web research |
-| [research-options](skills/research-options/SKILL.md) | Options analysis before deciding |
-| [voice-slack](skills/voice-slack/SKILL.md) | Slack message voice |
-
-PR pipeline: `ship-pr` → `triage-pr-comments` → `address-pr-review`.
-
 ## First install (local source)
 
 Use the **local clone** as source of truth on this machine. Run interactively (omit `-y`) to pick agents.
 
 ```bash
-# Optional: remove old remote-sourced copies first
-npx skills remove ship-pr triage-pr-comments address-pr-review -g
-
-npx skills add ~/ai/agent-skills -s ship-pr -g
-npx skills add ~/ai/agent-skills -s triage-pr-comments -g
-npx skills add ~/ai/agent-skills -s address-pr-review -g
+npx skills add ~/ai/agent-skills -s <skill-name> -g
 ```
 
-Add other skills from this repo the same way (`code-writing`, `deep-research`, etc.).
+Repeat for each skill you want. Optional: remove an old copy first with `npx skills remove <skill-name> -g`.
 
 Verify:
 
@@ -46,11 +27,13 @@ Ignore **PromptScript** install failures — it does not support global install.
 
 **1. Edit** skill files in `~/ai/agent-skills/skills/…`
 
-**2. Refresh one skill** after editing (no push required to test locally):
+**2. Refresh** after editing (no push required to test locally):
 
 ```bash
-npx skills add ~/ai/agent-skills -s address-pr-review -g
+npx skills add ~/ai/agent-skills -s <skill-name> -g
 ```
+
+Use `add` from the local path, not `update` — `update` pulls from GitHub and ignores uncommitted edits.
 
 **3. Ship** when the change is good:
 
@@ -63,14 +46,14 @@ git add -A && git commit -m "…" && git push
 
 ```bash
 git clone git@github.com:prasanthkumaar/agent-skills.git ~/ai/agent-skills
-npx skills add ~/ai/agent-skills -s ship-pr -g   # … each skill
+npx skills add ~/ai/agent-skills -s <skill-name> -g
 ```
 
 or pull + update if already installed from GitHub:
 
 ```bash
 cd ~/ai/agent-skills && git pull
-npx skills update ship-pr triage-pr-comments address-pr-review -g
+npx skills update <skill-name> -g
 ```
 
 ## Switching source (remote → local)
