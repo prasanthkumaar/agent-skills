@@ -1,56 +1,91 @@
-# Agent skills — PR workflow
+# agent-skills
 
-Composable skills for shipping and maintaining pull requests with verified evidence.
+Personal agent skills (private repo). Installed globally into `~/.agents/skills/` with symlinks for Claude Code and other agents.
 
-## Pipeline
+**Clone location:** `~/ai/agent-skills`
 
-```text
-grill-me (elsewhere)  →  locked spec
-        ↓
-    ship-pr  →  PR awaiting review (tests + screenshots in description)
-        ↓
-triage-pr-comments  →  classify feedback (read-only)
-        ↓
-address-pr-review  →  user OK → fix/reply → poll → re-triage loop
-```
-
-## Skills in this repo
+## Skills
 
 | Skill | Purpose |
 |-------|---------|
-| [ship-pr](skills/ship-pr/SKILL.md) | Locked spec → implement → verify → screenshot → open PR |
-| [triage-pr-comments](skills/triage-pr-comments/SKILL.md) | Fetch + classify review feedback (read-only) |
-| [address-pr-review](skills/address-pr-review/SKILL.md) | Review loop: triage → user OK → act → poll → re-triage |
+| [ship-pr](skills/ship-pr/SKILL.md) | Locked spec → PR with verified evidence |
+| [triage-pr-comments](skills/triage-pr-comments/SKILL.md) | Classify PR review feedback (read-only) |
+| [address-pr-review](skills/address-pr-review/SKILL.md) | Review loop: triage → user OK → act → poll |
+| [code-writing](skills/code-writing/SKILL.md) | TypeScript style guide |
+| [deep-research](skills/deep-research/SKILL.md) | Multi-source web research |
+| [research-options](skills/research-options/SKILL.md) | Options analysis before deciding |
+| [voice-slack](skills/voice-slack/SKILL.md) | Slack message voice |
 
-Install **ship-pr**, **triage-pr-comments**, and **address-pr-review** for the full loop.
+PR pipeline: `ship-pr` → `triage-pr-comments` → `address-pr-review`.
 
-## Install (skills.sh)
+## First install (local source)
 
-```bash
-npx skills add prasanthkumaar/agent-skills \
-  -s ship-pr -s triage-pr-comments -s address-pr-review -g -y -a cursor
-
-# Local clone while iterating
-npx skills add ~/Desktop/repos/agent-skills \
-  -s ship-pr -s triage-pr-comments -s address-pr-review -g -y -a cursor
-```
-
-Update after push:
+Use the **local clone** as source of truth on this machine. Run interactively (omit `-y`) to pick agents.
 
 ```bash
-npx skills update ship-pr triage-pr-comments address-pr-review -g -y
+# Optional: remove old remote-sourced copies first
+npx skills remove ship-pr triage-pr-comments address-pr-review -g
+
+npx skills add ~/ai/agent-skills -s ship-pr -g
+npx skills add ~/ai/agent-skills -s triage-pr-comments -g
+npx skills add ~/ai/agent-skills -s address-pr-review -g
 ```
 
-## Cross-skill composition
+Add other skills from this repo the same way (`code-writing`, `deep-research`, etc.).
 
-Skills refer to each other **by name only** (no relative paths across folders). `address-pr-review` loads `triage-pr-comments` each round and re-runs the `ship-pr` evidence pipeline after code changes.
+Verify:
 
-## Replaced
+```bash
+npx skills list -g
+ls ~/.agents/skills/
+```
 
-- `pr-review-cycle` → `address-pr-review` + `triage-pr-comments`
+Ignore **PromptScript** install failures — it does not support global install.
 
-## Related (not in this repo)
+## Day-to-day workflow
 
-- `grill-me` — locked spec for `ship-pr`
-- `split-to-prs` — split work before shipping
-- `babysit` — CI green / merge conflicts (orthogonal)
+**1. Edit** skill files in `~/ai/agent-skills/skills/…`
+
+**2. Refresh one skill** after editing (no push required to test locally):
+
+```bash
+npx skills add ~/ai/agent-skills -s address-pr-review -g
+```
+
+**3. Ship** when the change is good:
+
+```bash
+cd ~/ai/agent-skills
+git add -A && git commit -m "…" && git push
+```
+
+**4. Other machines** — clone to the same path, then either:
+
+```bash
+git clone git@github.com:prasanthkumaar/agent-skills.git ~/ai/agent-skills
+npx skills add ~/ai/agent-skills -s ship-pr -g   # … each skill
+```
+
+or pull + update if already installed from GitHub:
+
+```bash
+cd ~/ai/agent-skills && git pull
+npx skills update ship-pr triage-pr-comments address-pr-review -g
+```
+
+## Switching source (remote → local)
+
+If skills were installed from `prasanthkumaar/agent-skills` on GitHub, remove then re-add from local:
+
+```bash
+npx skills remove <skill-name> -g
+npx skills add ~/ai/agent-skills -s <skill-name> -g
+```
+
+You do **not** need remove + add for every edit — only when changing source or renaming a skill.
+
+## New chat sessions
+
+Skills load from `~/.agents/skills/` automatically. No reinstall per chat.
+
+After editing skills, run `npx skills add ~/ai/agent-skills -s … -g` once, then start a new chat if the old session cached stale skill text.
