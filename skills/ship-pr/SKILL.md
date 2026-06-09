@@ -101,8 +101,9 @@ If any section is missing, stop and fill gaps with the user before coding.
 - [ ] All matrix rows verified.
 - [ ] All screenshots in description; branch has no PNG commits.
 - [ ] Typecheck / lint run if the repo defines them.
-- [ ] PR description is the source of truth for the evidence matrix (used later by `address-pr-review`).
+- [ ] PR description is the source of truth for the evidence matrix.
+- [ ] PR state is **awaiting review** — not merge-ready. Hand off to `triage-pr-comments` then `address-pr-review` for the review loop.
 
 ## Related
 
-Upstream: locked spec (`grill-me` or equivalent). After review: `address-pr-review`. Split first: `split-to-prs`.
+Upstream: locked spec (`grill-me` or equivalent). After review: `triage-pr-comments` → `address-pr-review`. Split first: `split-to-prs`.

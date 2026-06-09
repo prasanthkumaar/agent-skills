@@ -40,9 +40,9 @@ gh pr view {number} --json reviews -q '.reviews[] | "\(.author.login) [\(.state)
 
 ## Build triage table
 
-| # | Source | Author | Location | Summary | Status |
-|---|--------|--------|----------|---------|--------|
-| 1 | inline | @bot | `path:42` | … | open |
+| # | Source | USER (login) | MENTION | Location | Summary | Status |
+|---|--------|--------------|---------|----------|---------|--------|
+| 1 | inline | `foo[bot]` | `@foo` | `path:42` | … | open |
 
 **Status:** open → addressed → deferred → reply-only
 
@@ -56,13 +56,36 @@ Skip already-replied threads unless user asks to revisit.
 
 ## Reply on a thread
 
-After fixing **or** reply-only (explain / defer / reject), post on the **inline** thread. Every reply must tag the original reviewer.
+After user OK on the draft, post on the **inline** thread (or issue comment for bot summaries). Every reply must tag the original reviewer with normalized **`@mention`**.
+
+**Draft first.** `triage-pr-comments` / `address-pr-review` show reply text for approval; do not call the API until the user says OK.
+
+### `USER:` vs `@mention` (important)
+
+Fetch stores **`USER:`** = GitHub `user.login` (API identity). The **first word of your reply** must be the **`@mention` handle** GitHub actually notifies — they are not always the same string.
+
+**Normalize `USER:` → `@mention` before posting:**
+
+1. Start from `USER:` (never the display name).
+2. If the login ends with `[bot]`, **drop the suffix** for the mention: `something[bot]` → `@something`.
+3. Otherwise use the login as-is: `chatgpt-codex-connector` → `@chatgpt-codex-connector`.
+4. Record both in the triage table when they differ: `USER: foo[bot]` · `MENTION: @foo`.
+
+Common mappings:
+
+| `USER:` (login) | `@mention` in reply |
+|-----------------|---------------------|
+| `claude[bot]` | `@claude` |
+| `coderabbitai[bot]` | `@coderabbitai` |
+| `chatgpt-codex-connector` | `@chatgpt-codex-connector` |
+
+**Anti-pattern:** `@foo[bot]` — GitHub accepts the text but the reviewer app often **does not** get notified and will not reply.
 
 ### Rule
 
-1. Read `USER:` from the fetch output for that thread (e.g. `claude`, `chatgpt-codex-connector`, `coderabbitai[bot]`).
-2. Start the reply with the reviewer's **GitHub handle**: `@` + that username (not display name).
-3. For bot apps, use the login GitHub shows (`@coderabbitai`, not `@CodeRabbit`).
+1. Read `USER:` from fetch for that thread.
+2. Derive **`@mention`** with the normalization above.
+3. Start the reply with that `@mention`, then the resolution (commit, file, or explanation).
 
 ### Examples
 

@@ -1,62 +1,38 @@
 # Resolution interview
 
-When a thread is not a straightforward fix, interview the user **one thread at a time** (same rhythm as a design Q&A).
+Use **only** for threads classified **`needs-user`** during `triage-pr-comments`. Do not interview on straightforward, reply-only, defer, or false-positive threads unless the user asks for options.
+
+**Nothing posts without user OK** — interview produces a decision and a **draft** reply; `address-pr-review` posts only after approval.
 
 ## Opening
 
-For thread `#N` from `@author` on `path:line`:
+For thread `#N` from `@mention` on `path:line`:
 
-> **Thread N:** "@author says: *<one-line summary>*  
+> **Thread N (`needs-user`):** "@mention says: *<one-line summary>*  
 > How would you like to resolve this?"
 
-## Options to offer
+## Options
 
 | Choice | When |
 |--------|------|
-| **A. Fix in code** | You want behaviour changed; agent implements after you pick approach |
-| **B. Reply only** | Current behaviour is intentional; explain in thread |
-| **C. Defer** | Valid but not this PR |
+| **A. Fix in code** | Pick approach; agent drafts fix + reply after you choose |
+| **B. Reply only** | Intentional; agent drafts explanation |
+| **C. Defer** | Follow-up issue; agent drafts defer reply |
 | **D. Need options** | Agent presents 2–3 approaches with tradeoffs + sample code |
 
-## If D (tradeoff)
+If **D**, present options with pros/cons; recommend one; **wait for explicit pick**.
 
-Present:
+## After decision
 
-```markdown
-### Option 1 — <name>
-- Pros: …
-- Cons: …
-- Sample: ```diff … ``` or pseudocode
+1. Record: `Thread {id} (@mention) → {choice} → draft ready`.
+2. Show **draft reply** and fix summary — **wait for OK** before implement/post.
+3. After post, thread status → **`addressed`** (not `resolved` until reviewer replies).
 
-### Option 2 — …
-```
+## Batch
 
-Recommend one; wait for explicit pick.
+- Default: one `needs-user` thread per question when resolutions differ.
+- User may say "same approach for all needs-user" — still OK each draft before post.
 
-## Constraints to ask (fix path)
+## Related
 
-Only when relevant:
-
-- Must match existing pattern in file X?
-- Must not change API / schema?
-- Must add test row to evidence matrix?
-
-## Batch vs one-at-a-time
-
-- **Default:** one thread per question when resolutions differ.
-- **Batch OK:** when user says "fix all the straightforward ones" — still stop for any tradeoff thread.
-
-## Record decisions
-
-Keep a running log for the final summary:
-
-```text
-Thread 3372726489 (@chatgpt-codex-connector) → fix → commit abc123 → reply posted
-Thread 3372726495 (@coderabbitai) → reply only → honour system intentional
-```
-
-When posting replies, always tag the **reviewer handle** recorded for that thread (e.g. `@chatgpt-codex-connector`).
-
-## After interview
-
-Proceed to implementation only when every **open** thread has a recorded resolution.
+Classification: [triage-rules.md](triage-rules.md). Table format: `triage-pr-comments` → triage-table.

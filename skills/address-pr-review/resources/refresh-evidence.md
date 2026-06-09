@@ -10,7 +10,7 @@ Run full refresh when:
 - E2e or test files changed.
 - Copy/UI changed that affects screenshot states.
 
-Skip only when **reply-only** resolutions with zero code or description changes — still re-read description for accuracy.
+Skip only when **reply-only** resolutions with zero code or description changes — still re-read description for accuracy. User must OK reply drafts before posting.
 
 ## Approach
 
