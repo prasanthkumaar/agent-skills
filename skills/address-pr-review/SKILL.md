@@ -1,67 +1,44 @@
 ---
 name: address-pr-review
-description: Runs the pull request review loop — triage, user-approved fixes and replies, evidence refresh, push, and in-session poll until reviewers respond. Requires triage-pr-comments and ship-pr. Use when addressing PR feedback or when the user says address PR review.
+description: Runs the pull request review loop — triage, fix/reply, push, re-trigger bot review, poll until clean. Pings the user only on tradeoffs, unreplied human threads, or when done with a summary. Requires triage-pr-comments and ship-pr. Use when addressing PR feedback or when the user says address PR review.
 ---
 
 # Address PR Review
 
-Multi-round loop: **triage → user OK → act → poll → re-triage**. Exit merge-ready only when triage shows no open work and no threads awaiting reviewer reply.
+Multi-round loop: **triage → act → poll → re-triage**. Default is **autonomous** — act on bot feedback without per-item OK. Ping only on tradeoffs, unreplied human threads, or loop completion ([loop summary](resources/loop-summary.md)). Interactive override: *"wait for my OK on each fix"* → present drafts first.
 
 ## Quick start
 
 1. Load **`triage-pr-comments`** — fetch and classify (read-only).
-2. Present **`needs-user`** threads + proposed drafts for everything else — **wait for your OK**.
-3. On OK: fix → refresh evidence (if code changed) → push → post replies.
-4. **Poll in-session** for reviewer activity → re-triage → repeat.
+2. **Ping immediately** if any human thread is `open`/`needs-user` and the user has not replied.
+3. **Act** on bot `open` items without per-item OK; **stop and ping** on `needs-user`.
+4. Push → post replies → auto-resolve bot threads when bot confirms fix.
+5. Re-trigger bot re-review → **poll in-session** → repeat until bot-clean.
 
 ## Hard rules
 
 - **Triage first every round** — load `triage-pr-comments` before any fix or reply.
-- **Your OK on everything** — no commit, push, PR body edit, or thread reply without explicit approval (including straightforward fixes and reply-only).
-- **`needs-user` only** — use resolution-interview for tradeoffs/ambiguous threads; do not interview on straightforward items unless you ask for options.
-- **Resolved** only when reviewer comments back or thread is marked resolved on GitHub — see `triage-pr-comments` → triage-table.
-- **After any code change:** full evidence refresh per [refresh-evidence.md](resources/refresh-evidence.md) (`ship-pr` pipeline).
-- **Replies** — normalized `@mention` on inline threads via `replies` API; see [fetch-comments.md](resources/fetch-comments.md).
-- **Do not resolve threads** on GitHub unless you ask.
+- **Autonomous by default** — no per-item OK unless interactive override.
+- **Ping when:** `needs-user` tradeoff; unreplied human thread; loop exits (always deliver [loop summary](resources/loop-summary.md)).
+- **Bot-only autonomous act** — human threads already answered stay `addressed`; do not block bot-clean exit.
+- **Two exit gates:** loop-complete (bot clean) vs merge-ready (human threads, approvals, CI, evidence) — see [loop-summary.md](resources/loop-summary.md).
+- **After code change:** local checks before push; full evidence at merge-ready — [refresh-evidence.md](resources/refresh-evidence.md).
+- **Replies:** normalized `@mention` — [fetch-comments.md](resources/fetch-comments.md). Auto-resolve **bot** threads on in-thread confirmation; never human.
+- **Stack push:** Graphite if available, else safe restack + `ship-pr` — [stack-orchestration.md](resources/stack-orchestration.md).
 
 ## Anti-patterns
 
-- Fixing or posting before triage or before your OK.
-- Marking threads `resolved` without reviewer reply or GitHub resolved state.
-- Exiting merge-ready while threads are still `addressed` (waiting on reviewer).
-- Polling in background without in-session loop semantics.
-- `@…[bot]` in reply bodies.
+- Fix/post before triage · per-item OK in default mode · human `resolved` without reviewer reply
+- Loop-complete with open blocking bot threads · background polling · `@…[bot]` mentions
+- Bot re-review on wrong stack PR (bot scopes to that PR's diff only)
 
 ## Workflow
 
-### Round N
+**Setup:** identify PR(s)/stack, map findings → owning branch bottom-up, load triage. Trigger `@claude please re-review after <summary>` on **each** stack PR; record comment IDs.
 
-**1. Triage** — load `triage-pr-comments`; build table ([triage-table.md](../triage-pr-comments/resources/triage-table.md) in that skill).
+**Round N:** (1) Triage → [triage-table.md](../triage-pr-comments/resources/triage-table.md). (2) Gate — ping unreplied human or `needs-user` ([resolution-interview.md](resources/resolution-interview.md)); else act on bot `open`. (3) Fix → local checks → push → reply → auto-resolve confirmed bot threads. (4) Poll in-session — issue comments **and** threads ([poll-reviewer.md](resources/poll-reviewer.md)). (5) Delta triage on new bot activity → repeat.
 
-**2. Present & wait**
-
-- `needs-user` → [resolution-interview.md](resources/resolution-interview.md) (options only).
-- `open` → proposed fix and/or **draft reply** (not posted).
-- `addressed` → note still waiting on reviewer.
-- **Stop. Wait for your OK** on each proposed action.
-
-**3. Act (only after OK)**
-
-- Scoped fixes → [triage-rules.md](resources/triage-rules.md).
-- Evidence refresh if code changed → [refresh-evidence.md](resources/refresh-evidence.md).
-- Push → `ship-pr` git-push policy (`--force-with-lease`).
-- Post approved replies → [fetch-comments.md](resources/fetch-comments.md); mark threads **`addressed`**.
-
-**4. Poll** → [poll-reviewer.md](resources/poll-reviewer.md) (in-session until new activity or you stop).
-
-**5. Round N+1** — on new reviewer comment or resolved thread: go to step 1 (delta triage).
-
-### Merge-ready exit
-
-- [ ] Triage: no `open`, no `needs-user`, no `addressed` awaiting reviewer.
-- [ ] CI green on PR head.
-- [ ] Human approve if required.
-- [ ] PR description evidence current if code changed this loop.
+**Exit:** bot-clean → ping + [loop summary](resources/loop-summary.md). Merge-ready is a separate follow-up gate.
 
 ## Related
 

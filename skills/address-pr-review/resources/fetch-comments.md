@@ -1,6 +1,6 @@
 # Fetch PR comments
 
-Gather all feedback on a PR before triaging.
+Gather all feedback before triaging. For stacks, repeat per PR — see [stack-orchestration.md](stack-orchestration.md).
 
 ## Identify PR
 
@@ -23,7 +23,22 @@ gh api repos/{owner}/{repo}/pulls/{number}/comments --paginate \
   -q '.[] | "ID:\(.id)\nPATH:\(.path):\(.line // .original_line)\nUSER:\(.user.login)\nBODY:\(.body)\n---"'
 ```
 
-Get owner/repo from `gh repo view --json nameWithOwner`.
+## Review threads (resolved state)
+
+```bash
+gh api graphql -f query='
+query($owner:String!,$repo:String!,$number:Int!) {
+  repository(owner:$owner,name:$repo) {
+    pullRequest(number:$number) {
+      reviewThreads(first:100) {
+        nodes { id isResolved path line
+          comments(first:20) { nodes { databaseId author { login } body createdAt } }
+        }
+      }
+    }
+  }
+}' -f owner={owner} -f repo={repo} -F number={number}
+```
 
 ## Issue comments (general PR comments)
 
@@ -40,84 +55,59 @@ gh pr view {number} --json reviews -q '.reviews[] | "\(.author.login) [\(.state)
 
 ## Build triage table
 
-| # | Source | USER (login) | MENTION | Location | Summary | Status |
-|---|--------|--------------|---------|----------|---------|--------|
-| 1 | inline | `foo[bot]` | `@foo` | `path:42` | … | open |
-
-**Status:** open → addressed → deferred → reply-only
-
-Skip already-replied threads unless user asks to revisit.
+Use [triage-table.md](../../triage-pr-comments/resources/triage-table.md) columns including `reviewer_type`, `scope_pr`, `blocking`.
 
 ## Filter noise
 
-- Ignore resolved threads if GitHub marks them resolved (unless user wants full history).
 - Deduplicate bot summaries that repeat inline findings.
 - Read comment **bodies** and minimum location — do not dump full JSON to user.
 
 ## Reply on a thread
 
-After user OK on the draft, post on the **inline** thread (or issue comment for bot summaries). Every reply must tag the original reviewer with normalized **`@mention`**.
-
-**Draft first.** `triage-pr-comments` / `address-pr-review` show reply text for approval; do not call the API until the user says OK.
+Post after triage classifies the thread (autonomous mode: no per-item OK unless interactive override). Every reply tags the original reviewer with normalized **`@mention`**.
 
 ### `USER:` vs `@mention` (important)
 
-Fetch stores **`USER:`** = GitHub `user.login` (API identity). The **first word of your reply** must be the **`@mention` handle** GitHub actually notifies — they are not always the same string.
+Fetch stores **`USER:`** = GitHub `user.login`. The **first word of your reply** must be the **`@mention` handle** GitHub notifies.
 
-**Normalize `USER:` → `@mention` before posting:**
+**Normalize `USER:` → `@mention`:**
 
 1. Start from `USER:` (never the display name).
-2. If the login ends with `[bot]`, **drop the suffix** for the mention: `something[bot]` → `@something`.
-3. Otherwise use the login as-is: `chatgpt-codex-connector` → `@chatgpt-codex-connector`.
-4. Record both in the triage table when they differ: `USER: foo[bot]` · `MENTION: @foo`.
+2. If login ends with `[bot]`, **drop the suffix**: `claude[bot]` → `@claude`.
+3. Otherwise use login as-is.
 
-Common mappings:
-
-| `USER:` (login) | `@mention` in reply |
-|-----------------|---------------------|
-| `claude[bot]` | `@claude` |
-| `coderabbitai[bot]` | `@coderabbitai` |
-| `chatgpt-codex-connector` | `@chatgpt-codex-connector` |
-
-**Anti-pattern:** `@foo[bot]` — GitHub accepts the text but the reviewer app often **does not** get notified and will not reply.
-
-### Rule
-
-1. Read `USER:` from fetch for that thread.
-2. Derive **`@mention`** with the normalization above.
-3. Start the reply with that `@mention`, then the resolution (commit, file, or explanation).
-
-### Examples
-
-**After a code fix:**
-
-```text
-@chatgpt-codex-connector Fixed in abc1234. `setPaid` now rejects `editing` bills and only settles from `shared`.
-```
-
-**Reply-only (intentional design):**
-
-```text
-@coderabbitai Intentional for v1 — `setPaid` mirrors the existing `setDone` honour-system model. Tracked separately if we add auth later.
-```
-
-**Defer:**
-
-```text
-@claude Good catch — deferring to a follow-up issue; out of scope for this PR.
-```
+**Anti-pattern:** `@foo[bot]` — often does not notify.
 
 ### Post via gh
 
+**REST (comment ID from fetch):**
+
 ```bash
-gh api repos/{owner}/{repo}/pulls/{number}/comments/{comment_id}/replies \
-  -f body="$(cat <<'EOF'
-@chatgpt-codex-connector Fixed in abc1234. …
-EOF
-)"
+gh api repos/{owner}/{repo}/pulls/comments/{comment_id}/replies \
+  -f body='@claude Fixed in abc1234. …'
 ```
 
-Get `comment_id` from the fetch output (`ID:` field) for that thread.
+**GraphQL (thread ID from reviewThreads):**
+
+```bash
+gh api graphql -f query='
+mutation($threadId:ID!,$body:String!) {
+  addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$threadId, body:$body}) {
+    comment { id }
+  }
+}' -f threadId=PRRT_… -f body='@claude …'
+```
+
+### Resolve bot thread (autonomous, after bot confirms)
+
+```bash
+gh api graphql -f query='
+mutation($id:ID!) {
+  resolveReviewThread(input:{threadId:$id}) { thread { isResolved } }
+}' -f id=PRRT_…
+```
+
+Never resolve human threads without user ask.
 
 ## Auth
 

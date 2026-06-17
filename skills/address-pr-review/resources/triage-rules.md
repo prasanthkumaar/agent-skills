@@ -1,8 +1,8 @@
 # Triage rules
 
-Classify each thread during **`triage-pr-comments`**. These rules do **not** authorize implementation or posting — `address-pr-review` waits for user OK on every action.
+Classify each thread during **`triage-pr-comments`**. In default autonomous mode, bot classifications authorize act without per-item OK. Human tradeoffs and unreplied human threads → ping user.
 
-**Replies** (when user approves) start with normalized **`@mention`** — see [fetch-comments.md](fetch-comments.md).
+**Replies** start with normalized **`@mention`** — see [fetch-comments.md](fetch-comments.md).
 
 ## Straightforward fix
 
@@ -12,9 +12,9 @@ All must be true:
 - No product tradeoff.
 - Fits PR scope.
 
-**Propose:** code change summary + draft inline reply with commit SHA placeholder. **Do not implement until user OK.**
+**Autonomous:** implement + inline reply with commit SHA.
 
-## Needs-user → stop in triage
+## Needs-user → ping user
 
 Any of:
 
@@ -23,7 +23,7 @@ Any of:
 - Scope expansion.
 - Disagreement with PR design decisions.
 
-**Status:** `needs-user`. Present options; wait for pick before drafting final reply.
+**Status:** `needs-user`. Ping user with options; stop autonomous act until decided.
 
 ## Reply-only
 
@@ -31,30 +31,44 @@ Any of:
 - Already fixed in latest commit (verify in diff).
 - Answered by PR description.
 
-**Propose:** draft reply only. **Do not post until user OK.**
+**Autonomous (bot):** post reply. **Human:** post only after user has decided if tradeoff involved.
 
 ## Defer
 
 - Out of scope for this PR.
 
-**Propose:** draft defer reply. **Do not post until user OK.**
+**Autonomous (bot):** post defer reply.
 
 ## False-positive (bot)
 
 - Claim wrong vs code/tests.
 
-**Propose:** draft rebuttal with evidence. **Do not post until user OK.**
+**Autonomous:** post rebuttal with evidence.
 
 ## Bot comments
 
-Validate against code and tests — do not blindly classify as straightforward fix.
+Validate against code and tests — do not blindly classify as straightforward fix. Mark `blocking: no` when bot labels finding minor/non-blocking.
 
-## Priority
+## Human comments
 
-1. Human `REQUEST_CHANGES`.
-2. Blocking correctness / CI tied to comment.
-3. Bot nits (only if repo treats as blocking).
+- Unreplied question or `REQUEST_CHANGES` → ping user if they have not replied.
+- User already replied → `addressed`; does not block bot-clean loop exit.
+
+## Priority (autonomous act order)
+
+1. Human ping list (stop — user must act).
+2. Bot blocking correctness / CI tied to comment.
+3. Bot nits marked blocking.
+4. Bot reply-only / false-positive.
+
+## Reviewer type
+
+| Signal | `reviewer_type` |
+|--------|-----------------|
+| Login ends with `[bot]` | `bot` |
+| Known automation (Vercel, Graphite, Bugbot summaries) | `noise` or `bot` per context |
+| Otherwise | `human` |
 
 ## After classification
 
-Record in triage table. Hand off to `address-pr-review` for user presentation and approval gate.
+Record in triage table. Hand off to `address-pr-review` for autonomous act or user ping.
