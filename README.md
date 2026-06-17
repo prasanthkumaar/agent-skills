@@ -18,15 +18,21 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 
 Other skills may exist globally (`~/.agents/skills/`) but not yet in this repo — migrate here when you want them versioned.
 
-## Workflow
+## Day-to-day workflow
 
-**1. Edit** — only under `skills/<name>/` in this repo. Never edit `~/.agents/skills/` or `~/.claude/skills/` directly.
+**1. Edit** — only under `skills/<name>/`. Never edit `~/.agents/skills/` or `~/.claude/skills/` directly.
 
-**2. Refresh global install** (test locally; no push required):
+**2. Refresh global install** (local test; no push required):
 
 ```bash
 npx skills add ~/ai/agent-skills -s <skill-name> -g -y
 ```
+
+Use **`add` from the local path**, not `update` — `update` pulls from GitHub and ignores uncommitted edits.
+
+**3. Ship** — **ping user before** `git push` (see [Updating a skill](#updating-a-skill) for full gate).
+
+**4. New chat** — start a fresh session if the agent cached old skill text.
 
 Refresh all repo skills:
 
@@ -36,16 +42,69 @@ for s in address-pr-review triage-pr-comments ship-pr code-writing deep-research
 done
 ```
 
-Use **`add` from the local path**, not `update` — `update` pulls from GitHub and ignores uncommitted edits.
+## Updating a skill
 
-**3. Ship:**
+Use when fixing a skill after a bad agent run or adding a new skill.
+
+### 1. Draft with write-a-skill
+
+Load the **write-a-skill** skill (global: `~/.agents/skills/write-a-skill/`). Follow its checklist:
+
+- Description with "Use when…" triggers
+- `SKILL.md` under 100 lines; split detail to `resources/`
+- Concrete examples and anti-patterns
+
+Edit only `skills/<name>/` in this repo.
+
+### 2. Install globally (local test)
+
+```bash
+npx skills add ~/ai/agent-skills -s <skill-name> -g -y
+```
+
+This updates `~/.agents/skills/` only — not files in this repo.
+
+### 3. Verify before ship
+
+**Diff repo vs global:**
+
+```bash
+diff -qr ~/ai/agent-skills/skills/<skill-name> ~/.agents/skills/<skill-name>
+npx skills list -g | grep <skill-name>
+```
+
+**Fresh subagent check** — launch a subagent with no prior thread context. Prompt:
+
+> Read `~/.agents/skills/<skill-name>/SKILL.md` and key `resources/`. List the hard rules and anti-patterns. Confirm whether [specific fix, e.g. "inline replies only, @claude not @claude[bot]"] is present. PASS/FAIL.
+
+Optionally spot-check Claude symlink:
+
+```bash
+readlink ~/.claude/skills/<skill-name>
+# should point to ~/.agents/skills/<skill-name>
+```
+
+Codex and Cursor load from `~/.agents/skills/` via `npx skills` — same files.
+
+### 4. Ping user before push
+
+Stop and ask the user before:
+
+- `git push` to GitHub
+- Re-running global install on another machine (if applicable)
+
+Include: skill name, summary of change, subagent verify result, `diff` clean.
+
+### 5. Ship after OK
 
 ```bash
 cd ~/ai/agent-skills
-git add -A && git commit -m "…" && git push
+git add skills/<skill-name>
+git commit -m "fix(<skill-name>): …"
+git push
 ```
 
-**4. New chat** — start a fresh session if the agent cached old skill text.
+Global install on this machine is already done in step 2. Other machines: `git pull` then `npx skills update <skill-name> -g`.
 
 ## First install
 
@@ -66,8 +125,6 @@ After `git pull`:
 npx skills update <skill-name> -g
 ```
 
-Or re-run `npx skills add ~/ai/agent-skills -s <skill-name> -g` from a local clone.
-
 ## Switching source (GitHub → local)
 
 ```bash
@@ -75,9 +132,9 @@ npx skills remove <skill-name> -g
 npx skills add ~/ai/agent-skills -s <skill-name> -g
 ```
 
-Only needed when changing install source or renaming a skill — not for every edit.
+Only when changing install source or renaming a skill — not for every edit.
 
 ## Repo boundaries
 
-- **`skills/`** — source of truth; commit and push changes here.
-- **`npx skills add … -g`** — copies to `~/.agents/skills/` only. Does not write into this repo (no `.agents/` folder here).
+- **`skills/`** — source of truth; commit and push here.
+- **`npx skills add … -g`** — copies to `~/.agents/skills/` only. Does not create `.agents/` in this repo.

@@ -21,6 +21,7 @@ Read-only pass over PR feedback. Produce a triage table for `address-pr-review`.
 - **Reviewer type.** Infer `bot` from `[bot]` login suffix or known bot accounts; else `human`.
 - **Resolved** — bot thread: reviewer (bot) confirmed fix in-thread **or** thread marked resolved on GitHub. Human thread: human reviewer replied accepting **or** thread marked resolved. No reply = `addressed`, not `resolved`.
 - **Normalize `@mention`** from `USER:` (strip `[bot]` suffix) — record both in the table; never suggest `@…[bot]` in draft replies.
+- **Reply target is mandatory** — inline threads use `replies/{id}` or GraphQL `PRRT_…`; never substitute a root issue comment. See `address-pr-review` → [reply-on-threads.md](../address-pr-review/resources/reply-on-threads.md).
 
 ## Thread status
 
@@ -48,8 +49,9 @@ See `address-pr-review` → triage-rules for classification criteria.
 
 | Source | Post via |
 |--------|----------|
-| Inline review comment | `pulls/comments/{id}/replies` or GraphQL `addPullRequestReviewThreadReply` |
-| Issue comment (bot summary) | New issue comment with `@mention` |
+| Inline review comment | `pulls/comments/{id}/replies` or GraphQL thread reply — **never** `gh pr comment` |
+| Issue comment (bot re-review trigger only) | `gh pr comment` with `@claude please re-review…` |
+| Issue comment (bot summary, no inline thread) | New issue comment with `@mention` |
 
 ## Output
 

@@ -2,6 +2,8 @@
 
 Gather all feedback before triaging. For stacks, repeat per PR — see [stack-orchestration.md](stack-orchestration.md).
 
+**Posting replies:** see [reply-on-threads.md](reply-on-threads.md) — inline only for thread feedback; never `gh pr comment` for that.
+
 ## Identify PR
 
 ```bash
