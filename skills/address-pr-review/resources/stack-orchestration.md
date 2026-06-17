@@ -44,12 +44,10 @@ No manual `git push --force`.
 
 ## Bot re-review trigger
 
-Post on **each PR** in the stack — bot scopes to that PR's diff only:
+Post on **each PR** in the stack — tag the bot reviewer with its normalized `@mention` from triage:
 
 ```bash
-for pr in 225 232 241; do
-  gh pr comment $pr --body "@claude please re-review after <summary>."
-done
+gh pr comment $pr --body "@<mention> please re-review after <summary>."
 ```
 
 Record each trigger comment `ID` for delta polling.

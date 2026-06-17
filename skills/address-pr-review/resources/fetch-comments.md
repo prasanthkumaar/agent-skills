@@ -2,8 +2,6 @@
 
 Gather all feedback before triaging. For stacks, repeat per PR — see [stack-orchestration.md](stack-orchestration.md).
 
-**Posting replies:** see [reply-on-threads.md](reply-on-threads.md) — inline only for thread feedback; never `gh pr comment` for that.
-
 ## Identify PR
 
 ```bash
@@ -66,27 +64,27 @@ Use [triage-table.md](../../triage-pr-comments/resources/triage-table.md) column
 
 ## Reply on a thread
 
-Post after triage classifies the thread (autonomous mode: no per-item OK unless interactive override). Every reply tags the original reviewer with normalized **`@mention`**.
+Three rules:
 
-### `USER:` vs `@mention` (important)
+1. **Inline only** — use `pulls/comments/{id}/replies` (or GraphQL thread reply). Never `gh pr comment` to answer a review thread.
+2. **Root comment only** to trigger bot re-review after pushing fixes — tag the bot with its normalized `@mention` from triage.
+3. **Normalize `@mention`** from thread `USER:` login — strip `[bot]` suffix if present. Never `@foo[bot]` in the reply body.
 
-Fetch stores **`USER:`** = GitHub `user.login`. The **first word of your reply** must be the **`@mention` handle** GitHub notifies.
+Record both `USER:` and `@mention` in the triage table when they differ.
 
-**Normalize `USER:` → `@mention`:**
+| `USER:` login | `@mention` |
+|---------------|------------|
+| `claude[bot]` | `@claude` |
+| `coderabbitai[bot]` | `@coderabbitai` |
+| `chatgpt-codex-connector` | `@chatgpt-codex-connector` |
 
-1. Start from `USER:` (never the display name).
-2. If login ends with `[bot]`, **drop the suffix**: `claude[bot]` → `@claude`.
-3. Otherwise use login as-is.
-
-**Anti-pattern:** `@foo[bot]` — often does not notify.
-
-### Post via gh
+Body starts with the thread reviewer's `@mention`, then fix + commit SHA.
 
 **REST (comment ID from fetch):**
 
 ```bash
 gh api repos/{owner}/{repo}/pulls/comments/{comment_id}/replies \
-  -f body='@claude Fixed in abc1234. …'
+  -f body='@reviewer Fixed in abc1234. …'
 ```
 
 **GraphQL (thread ID from reviewThreads):**
@@ -97,7 +95,7 @@ mutation($threadId:ID!,$body:String!) {
   addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$threadId, body:$body}) {
     comment { id }
   }
-}' -f threadId=PRRT_… -f body='@claude …'
+}' -f threadId=PRRT_… -f body='@reviewer …'
 ```
 
 ### Resolve bot thread (autonomous, after bot confirms)

@@ -5,7 +5,7 @@ Run after fixes were pushed and replies posted. Loop until new bot activity or e
 ## When to poll
 
 - After autonomous act round (fixes + replies + optional bot re-review trigger).
-- After posting `@claude please re-review` on stack PR(s).
+- After posting a bot re-review trigger (root comment with `@<mention> please re-review`) on stack PR(s).
 
 ## How to poll
 

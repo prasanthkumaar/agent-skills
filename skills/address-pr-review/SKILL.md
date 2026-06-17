@@ -23,21 +23,19 @@ Multi-round loop: **triage → act → poll → re-triage**. Default is **autono
 - **Bot-only autonomous act** — human threads already answered stay `addressed`; do not block bot-clean exit.
 - **Two exit gates:** loop-complete (bot clean) vs merge-ready (human threads, approvals, CI, evidence) — see [loop-summary.md](resources/loop-summary.md).
 - **After code change:** local checks before push; full evidence at merge-ready — [refresh-evidence.md](resources/refresh-evidence.md).
-- **Replies:** inline thread only for review feedback — [reply-on-threads.md](resources/reply-on-threads.md). `@claude` not `@claude[bot]`. Root `gh pr comment` only to trigger re-review. Auto-resolve **bot** threads on confirmation; never human.
+- **Replies:** inline thread only; normalize `@mention` from triage (strip `[bot]`); root comment only for bot re-review trigger — [fetch-comments.md](resources/fetch-comments.md).
 - **Stack push:** Graphite if available, else safe restack + `ship-pr` — [stack-orchestration.md](resources/stack-orchestration.md).
 
 ## Anti-patterns
 
-- Fix/post before triage · per-item OK in default mode · human `resolved` without reviewer reply
-- **Root PR comment to address inline feedback** — use thread reply API only ([reply-on-threads.md](resources/reply-on-threads.md))
-- `@claude[bot]` or any `@…[bot]` in replies · loop-complete with open bot threads · background polling
+- Root PR comment to answer inline feedback · `@…[bot]` in replies · loop-complete with open bot threads · background polling
 - Bot re-review on wrong stack PR (bot scopes to that PR's diff only)
 
 ## Workflow
 
-**Setup:** identify PR(s)/stack, map findings → owning branch bottom-up, load triage. Trigger `@claude please re-review after <summary>` on **each** stack PR; record comment IDs.
+**Setup:** identify PR(s)/stack, map findings → owning branch bottom-up, load triage. To trigger bot re-review, post root comment `@<mention> please re-review after <summary>` using the bot's normalized handle from triage — on **each** stack PR; record comment IDs.
 
-**Round N:** (1) Triage → [triage-table.md](../triage-pr-comments/resources/triage-table.md). (2) Gate — ping unreplied human or `needs-user` ([resolution-interview.md](resources/resolution-interview.md)); else act on bot `open`. (3) Fix → local checks → push → **inline** replies ([reply-on-threads.md](resources/reply-on-threads.md)) → verify mentions → auto-resolve confirmed bot threads. (4) Poll in-session ([poll-reviewer.md](resources/poll-reviewer.md)). (5) Delta triage → repeat.
+**Round N:** (1) Triage. (2) Gate — ping unreplied human or `needs-user`; else act on bot `open`. (3) Fix → push → inline replies ([fetch-comments.md](resources/fetch-comments.md)) → auto-resolve confirmed bot threads. (4) Poll. (5) Delta triage → repeat.
 
 **Exit:** bot-clean → ping + [loop summary](resources/loop-summary.md). Merge-ready is a separate follow-up gate.
 
