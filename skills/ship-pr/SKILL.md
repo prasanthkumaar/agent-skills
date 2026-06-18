@@ -1,22 +1,23 @@
 ---
 name: ship-pr
-description: Turns a locked design spec into a merge-ready pull request with pre-PR Codex review loop, verified happy-path and edge-case tests, and full-page screenshots in the PR description. Use when the user says ship it, raise the PR, plan to PR, or after a design/spec session is finalized and ready to implement.
+description: Implements an approved to-plan harness plan into a merge-ready pull request with pre-PR reviewer loop, verified happy-path and edge-case tests, and full-page screenshots in the PR description. Use when the user says ship it, raise the PR, or after to-plan is approved.
 ---
 
 # Ship PR
 
-Turn a **locked spec** into a PR that is ready for review: implemented, internally reviewed, verified, screenshotted, and described — without mentioning how the spec was produced.
+Turn an **approved plan** (`to-plan`) into a PR ready for review: implemented, internally reviewed, verified, screenshotted, and described.
 
 ## Quick start
 
-1. Confirm the locked spec exists (see [resources/locked-spec-contract.md](resources/locked-spec-contract.md)).
-2. Implement → bootstrap env → verify matrix → **pre-PR review loop** → re-verify if needed → screenshots → PR body → push.
-3. Exit only when loop-clean, every matrix row is green, and every screenshot URL is in the **PR description** (not on the branch).
+1. Load approved plan file — [resources/plan-contract.md](resources/plan-contract.md) (harness default location).
+2. Implement → bootstrap env → verify matrix → pre-PR review loop → re-verify if needed → screenshots → PR body → push.
+3. Exit when loop-clean, matrix green, screenshots in PR description only.
 
 ## Input
 
-A **locked spec** artifact with: Problem, Solution, Design decisions, Happy paths, Edge cases, Out of scope.  
-If any section is missing, stop and fill gaps with the user before coding.
+Approved **plan file** from `to-plan` with: Problem, Solution, design/testing decisions, happy paths, edge cases, out of scope, implementation steps.  
+Discover path via harness defaults or user-provided path. Legacy locked-spec paste OK if same structure.  
+If required sections are missing, stop before coding.
 
 ## Hard rules
 
@@ -27,7 +28,7 @@ If any section is missing, stop and fill gaps with the user before coding.
 - **Screenshots in the description only.** Upload via `gh image` (`user-attachments` CDN). Never commit PNGs. See [resources/host-screenshots.md](resources/host-screenshots.md).
 - **Ephemeral artifacts in OS temp.** See [resources/temp-artifacts.md](resources/temp-artifacts.md).
 - **Follow the repo PR template** if one exists; otherwise use [resources/pr-body.md](resources/pr-body.md).
-- **No meta references** to how the spec was produced in commits, PR title, or body.
+- **No meta references** to grill, plan mode, or session tooling in commits, PR title, or body.
 - **Stacked PRs:** use `git push --force-with-lease`, never bare `--force`. See [resources/git-push.md](resources/git-push.md).
 
 ## Anti-patterns
@@ -43,11 +44,11 @@ If any section is missing, stop and fill gaps with the user before coding.
 ### 0. Preflight
 
 - [ ] Confirm branch and base; `git fetch`; rebase/merge if behind.
-- [ ] Read locked spec; confirm happy + edge matrix is complete.
+- [ ] Read approved plan; confirm happy + edge matrix complete — [resources/plan-contract.md](resources/plan-contract.md).
 
 ### 1. Implement
 
-- [ ] Scope = locked spec only; no drive-by refactors.
+- [ ] Scope = approved plan only; no drive-by refactors.
 
 ### 2. Bootstrap environment
 
@@ -95,4 +96,4 @@ If any section is missing, stop and fill gaps with the user before coding.
 
 ## Related
 
-Upstream: locked spec (`grill-me`). Pre-PR loop triage spirit: `address-pr-review`. After PR: `triage-pr-comments` → `address-pr-review`. Split first: `split-to-prs`.
+Upstream: `build-context` → `grill-me` / `grill-with-docs` → `to-plan`. After PR: `triage-pr-comments` → `address-pr-review`.

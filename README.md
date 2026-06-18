@@ -8,6 +8,8 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 
 | Skill | Use when |
 |-------|----------|
+| `build-context` | ≤300w brief from Slack/Notion/memory/codebase before grill |
+| `to-plan` | After grill — harness Plan mode, one plan file, ends with `ship-pr` step |
 | `address-pr-review` | PR review loop — triage, fix, re-review, poll |
 | `triage-pr-comments` | Classify PR feedback before acting |
 | `ship-pr` | Locked spec → implement → pre-PR reviewer loop (`reviewers.md`) → evidence + screenshots → push; ship summary per reviewer |
@@ -15,6 +17,16 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | `deep-research` | Multi-round web research |
 | `research-options` | Compare approaches before deciding |
 | `voice-slack` | Draft Slack messages in your voice |
+
+### End-to-end workflow
+
+```text
+build-context → grill-me | grill-with-docs → to-plan → ship-pr → address-pr-review
+```
+
+- **`build-context`** — recon only; [sources](skills/build-context/resources/sources.md)
+- **`to-plan`** — Plan mode; one file at harness default; [template](skills/to-plan/resources/plan-template.md)
+- **`ship-pr`** — implement plan + pre-PR reviewers + push
 
 ### `ship-pr` reviewers (editable)
 
@@ -41,7 +53,7 @@ Use **`add` from the local path**, not `update` — `update` pulls from GitHub a
 Refresh all repo skills:
 
 ```bash
-for s in address-pr-review triage-pr-comments ship-pr code-writing deep-research research-options voice-slack; do
+for s in build-context to-plan address-pr-review triage-pr-comments ship-pr code-writing deep-research research-options voice-slack; do
   npx skills add ~/ai/agent-skills -s "$s" -g -y
 done
 ```

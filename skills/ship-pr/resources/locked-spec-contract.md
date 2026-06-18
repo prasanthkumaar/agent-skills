@@ -1,5 +1,7 @@
 # Locked spec contract
 
+Superseded by [plan-contract.md](plan-contract.md). Kept for reference.
+
 The locked spec is the handoff artifact from a design session into `ship-pr`. It must exist and be user-approved before implementation starts.
 
 ## Required sections
