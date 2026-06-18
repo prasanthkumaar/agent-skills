@@ -10,11 +10,15 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 |-------|----------|
 | `address-pr-review` | PR review loop — triage, fix, re-review, poll |
 | `triage-pr-comments` | Classify PR feedback before acting |
-| `ship-pr` | Open PR with evidence, screenshots, push policy |
+| `ship-pr` | Locked spec → implement → pre-PR reviewer loop (`reviewers.md`) → evidence + screenshots → push; ship summary per reviewer |
 | `code-writing` | TypeScript/TSX style and workflow |
 | `deep-research` | Multi-round web research |
 | `research-options` | Compare approaches before deciding |
 | `voice-slack` | Draft Slack messages in your voice |
+
+### `ship-pr` reviewers (editable)
+
+Pre-push loop runs every **enabled** reviewer in `skills/ship-pr/resources/reviewers.md` in parallel (Codex review, Codex adversarial, Bugbot, security). Parent dedupes, fixes straightforward items, pings on tradeoffs. After push, deliver per-reviewer summary from `resources/ship-summary.md`.
 
 Other skills may exist globally (`~/.agents/skills/`) but not yet in this repo — migrate here when you want them versioned.
 

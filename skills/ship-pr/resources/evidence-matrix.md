@@ -30,6 +30,8 @@ Each row must record:
 1. Typecheck / lint (if repo has them) — fast gate.
 2. Unit tests touching changed modules.
 3. E2e or manual matrix rows — happy paths first, then edge cases.
+4. Pre-PR review loop (`pre-pr-review-loop.md`) — may change code; then **re-run steps 1–3** on full matrix.
+5. Screenshots — only after loop-clean.
 
 ## Failure handling
 
