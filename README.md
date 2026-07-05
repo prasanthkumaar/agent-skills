@@ -14,7 +14,7 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | `triage-pr-comments` | Classify PR feedback before acting |
 | `ship-pr` | Locked spec → implement → pre-PR reviewer loop (`reviewers.md`) → evidence + screenshots → push; ship summary per reviewer |
 | `code-writing` | TypeScript/TSX style and workflow |
-| `deep-research` | Multi-round web research |
+| `research-web` | Bounded source-backed web research |
 | `research-options` | Compare approaches before deciding |
 | `voice-slack` | Draft Slack messages in your voice |
 
@@ -53,7 +53,7 @@ Use **`add` from the local path**, not `update` — `update` pulls from GitHub a
 Refresh all repo skills:
 
 ```bash
-for s in build-context to-plan address-pr-review triage-pr-comments ship-pr code-writing deep-research research-options voice-slack; do
+for s in build-context to-plan address-pr-review triage-pr-comments ship-pr code-writing research-web research-options voice-slack; do
   npx skills add ~/ai/agent-skills -s "$s" -g -y
 done
 ```

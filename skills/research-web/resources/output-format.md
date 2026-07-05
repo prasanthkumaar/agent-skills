@@ -18,7 +18,7 @@ Count words before sending. URLs do not count toward the limit if using markdown
 - Full subagent dumps
 - Evidence-quality essays
 
-If the user asks for depth, offer a follow-up or write a scratch report under `$TMPDIR/deep-research-{topic}.md` and give the path — still keep chat reply ≤100 words unless user explicitly asks for the full report.
+If the user asks for depth, offer a follow-up or write a scratch report under `$TMPDIR/research-web-{topic}.md` and give the path — still keep chat reply ≤100 words unless user explicitly asks for the full report.
 
 ## Internal work (not shown)
 
