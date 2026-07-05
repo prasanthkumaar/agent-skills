@@ -53,4 +53,4 @@ End with: **Next:** `grill-me` (general) or `grill-with-docs` (codebase + `CONTE
 
 ## Related
 
-Chain: `build-context` → `grill` → `to-plan` → `ship-pr` → `address-pr-review`. Sources: [resources/sources.md](resources/sources.md).
+Chain: `build-context` → `grill` → `to-plan` → `build-pr` → `update-pr`. Sources: [resources/sources.md](resources/sources.md).

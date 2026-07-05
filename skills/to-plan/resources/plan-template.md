@@ -1,6 +1,6 @@
 # Plan template
 
-Embed this structure in the harness plan body (after YAML frontmatter if the harness uses it). Adapted from Matt Pocock [`to-prd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/to-prd/SKILL.md) + `ship-pr` evidence matrix.
+Embed this structure in the harness plan body (after YAML frontmatter if the harness uses it). Adapted from Matt Pocock [`to-prd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/to-prd/SKILL.md) + `build-pr` evidence expectations.
 
 ```markdown
 # {Feature title}
@@ -42,14 +42,14 @@ Bulleted decisions from grill — no session meta.
 Ordered build steps (vertical slices OK). Reference `code-writing` if TS/React.
 
 ## Final step — ship
-After user approves this plan, run skill **`ship-pr`** against this plan file:
+After user approves this plan, run skill **`build-pr`** against this plan file:
 - Implement scope only
 - Pre-PR reviewer loop (`reviewers.md`)
 - Evidence matrix + screenshots in PR description
 - Push and open PR
-- Hand off to `address-pr-review` for external review
+- Hand off to `update-pr` for follow-up changes or external review comments
 ```
 
 ## Frontmatter todos (Cursor)
 
-Map **Implementation steps** + **Final step — ship** to `todos` entries. Last todo id suggestion: `ship-pr`.
+Map **Implementation steps** + **Final step — build PR** to `todos` entries. Last todo id suggestion: `build-pr`.

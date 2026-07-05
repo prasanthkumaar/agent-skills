@@ -24,10 +24,10 @@ ls -t ~/.cursor/plans/*.plan.md 2>/dev/null | head -1
 ls -t ~/.claude/plans/*.md 2>/dev/null | head -1
 ```
 
-If multiple harnesses or paths exist, pick the file modified during **this** planning session. Pass that path to `ship-pr`.
+If multiple harnesses or paths exist, pick the file modified during **this** planning session. Pass that path to `build-pr`.
 
 **Do not commit** plan files unless the repo convention requires it.
 
 ## Frontmatter
 
-Cursor plans use YAML frontmatter (`name`, `overview`, `todos`). Populate `todos` for implementation steps; **last todo** must be invoking `ship-pr`.
+Cursor plans use YAML frontmatter (`name`, `overview`, `todos`). Populate `todos` for implementation steps; **last todo** must be invoking `build-pr`.

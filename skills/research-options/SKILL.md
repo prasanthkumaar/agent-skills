@@ -1,6 +1,6 @@
 ---
 name: research-options
-description: "Validate multiple options before recommending. Triggers on: give me options, what are my options, which approach, help me decide, research options."
+description: "Validates multiple options before recommending, including broad pattern decisions. Use when the user asks for options, approach tradeoffs, help deciding, research options, or when framework/library/API/config choices are broad enough that docs-check is too narrow."
 ---
 
 # Research Options
@@ -19,6 +19,17 @@ Use this skill to give options that have actually been tried, verified, and comp
 8. Save proof for working options: screenshots, diffs, command output, measurements, benchmarks, or source links.
 9. Revert trial code and clean temporary exploration files before moving to the next option, unless the user explicitly asks to keep one option applied.
 10. End with the working tree back to the pre-exploration state, except for files the user explicitly asked to change and proof artifacts saved outside the repo.
+
+## Pattern Decisions
+
+Use this path when a framework, library, API, or config choice is broad enough that `docs-check` is too narrow.
+
+1. Compare documented options from official docs first, Context7 second.
+2. Prefer 3-5 options unless the decision naturally has fewer.
+3. Validate the smallest practical proof for each viable option.
+4. Recommend the simplest fitting option.
+5. Include why it wins over the main alternative.
+6. Output any code comment rationale that `code-writing` should use if the chosen pattern is non-obvious.
 
 ## Visual Option Loop
 
