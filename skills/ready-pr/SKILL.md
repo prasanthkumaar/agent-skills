@@ -1,11 +1,11 @@
 ---
-name: review-pr
-description: Reviews an existing PR or stacked PR set, then drives any findings through triage, fixing, evidence capture, and PR description updates. Use when the user asks to review an already-open PR or stack, run the full review loop, make PRs merge ready, or rerun multi-review without a new requested code change.
+name: ready-pr
+description: Drives an existing PR or stacked PR set to agent-owned merge readiness without requiring a new requested code change. Use when the user asks to ready an already-open PR or stack, run the full review loop, make PRs merge ready, or rerun multi-review without a new requested code change.
 ---
 
-# Review PR
+# Ready PR
 
-Thin orchestrator for an existing PR or stack. Use this when the starting point is "review what is already up", not "make a new requested change".
+Thin orchestrator for an existing PR or stack. Use this when the starting point is "make what is already up merge ready", not "make a new requested change".
 
 ## Quick start
 
@@ -35,7 +35,7 @@ For each branch, starting from the earliest parent:
 - Reviewers are fresh-context and read-only.
 - Fix agents are separate fresh-context agents.
 - Do not create new PRs unless an expected stack branch has no PR.
-- Do not mark PRs ready for review unless the user explicitly asks in normal chat.
+- Do not mark PRs ready for review or merge unless the user explicitly asks in normal chat.
 - Do not resolve GitHub threads.
 - GitHub writes happen only through `write-pr-description` or `reply-github-comment`.
 
