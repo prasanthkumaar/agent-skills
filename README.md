@@ -22,6 +22,8 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | `capture-evidence` | Capture local command/browser/screenshot evidence into an OS-temp manifest |
 | `write-pr-description` | Create draft PRs or update PR descriptions, images, and evidence links |
 | `reply-github-comment` | Post verified GitHub replies only, never resolve threads |
+| `explain-diff-html` | Rich interactive HTML explainer for a diff, branch, PR, or code change |
+| `explain-diff-notion` | Rich Notion explainer for a diff, branch, PR, or code change |
 | `explain-with-html` | Visual temp HTML explainer for code, PRs, diffs, transcripts, and decisions |
 | `research-web` | Bounded source-backed web research |
 | `voice-slack` | Draft Slack messages in your voice |
@@ -75,7 +77,7 @@ Use **`add` from the local path**, not `update` — `update` pulls from GitHub a
 Refresh all repo skills:
 
 ```bash
-for s in build-context to-plan build-pr ready-pr update-pr code-writing docs-check research-options multi-review review-docs-check review-bug review-security review-codebase-standards review-pr-accuracy triage fix-and-verify capture-evidence write-pr-description reply-github-comment explain-with-html research-web voice-slack; do
+for s in build-context to-plan build-pr ready-pr update-pr code-writing docs-check research-options multi-review review-docs-check review-bug review-security review-codebase-standards review-pr-accuracy triage fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
   npx skills add ~/ai/agent-skills -s "$s" -g -y
 done
 ```
