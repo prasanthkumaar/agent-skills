@@ -1,0 +1,97 @@
+---
+name: interview-prep-design-r3
+description: Creates interviewer prep for Round 3 designer interviews directly in the correct Notion meeting page. Use when the user says /interview-prep-design-r3 with a candidate and a design hire requirements Notion link.
+---
+
+# Interview Prep Design R3
+
+## Connector Gate
+Before checking connectors or doing any lookup, the command must include both:
+- Candidate name
+- Design hire requirements Notion link
+If the requirements link is missing, blocked, ambiguous, or not a Notion page, stop and tell the user: "Blocked: missing usable design hire requirements Notion link." Do not infer the requirements page from Slack, Calendar, Notion search, or prior runs.
+
+Before drafting, writing, or messaging anywhere, check that all required connectors are available and usable:
+- Calendar
+- Recruitee
+- Notion
+- Slack
+If any connector is missing, blocked, unauthorised, or unreliable, stop and tell the user which connector is blocked. Do not draft from partial access.
+Create interviewer prep only. Never draft candidate-facing prep or messages as part of this skill.
+
+## Identity Checks
+Before writing, determine all of these unambiguously:
+- Candidate identity
+- Design hire requirements Notion page supplied by the user
+- Calendar interview event
+- Recruitee candidate profile
+- Pre-created Notion meeting page linked to the Calendar event
+- Seat context anchored on the supplied requirements page
+Use evidence in this order:
+1. Recruitee first for candidate evidence, prior feedback, profile, role, stage, and interview history.
+2. Calendar for event, panel, date, format, and linked meeting page.
+3. The supplied design hire requirements page for what the seat needs.
+4. Notion for the meeting page and durable hiring docs.
+5. Slack for hiring state, role context, decisions, and corroboration.
+If multiple plausible candidates, events, profiles, pages, or seat definitions match, ask the user before drafting or writing.
+
+## Notion Write
+Write directly to the pre-created Notion meeting page once identity, page, and source access are unambiguous. Preserve the meeting notes block at the top. Write or replace only the interviewer prep section below it. Never create a new Notion page unless the user explicitly asks.
+Default structure:
+```md
+## Interview context
+Panel:
+Format:
+Purpose:
+Requirements source:
+Seat need:
+Prior round signals
+### R1 - [interviewer] - [exact Recruitee rating]
+Strengths:
+- Signal:
+  Evidence:
+Gaps:
+- Gap:
+  What they saw:
+  Why it matters for this seat:
+### R2 - [interviewer] - [exact Recruitee rating]
+Strengths:
+- Signal:
+  Evidence:
+Gaps:
+- Gap:
+  What they saw:
+  Why it matters for this seat:
+Gap map:
+- [question heading]: covers [round/interviewer gap] because [source evidence]
+## Questions
+### [2-3 word heading]
+[Question as a plain paragraph, not a numbered list]
+Look for: [tradeoffs, choices, and evidence that would raise or lower confidence]
+```
+Do not include Candidate Q&A or Note for panel.
+
+## Prep Rules
+Use simple British English at Hemingway grade 4 or below. Use short words, short sentences, and concrete verbs. Avoid em dashes, jargon, and the phrase "gap filling". Ask 5-6 main questions, grouped under short 2-3 word headings.
+Use exact Recruitee rating labels only: no, not sure, yes, strong yes. Never rename "not sure" as neutral.
+Prior round signals must name the round, interviewer, strengths, and gaps. Write enough context that Pras can understand the point without opening Recruitee. For each strength or gap, say what the interviewer saw, not just the label. Do not list a gap unless the source notes contain evidence for it. If the evidence is weak, say that plainly or omit the gap.
+Before choosing questions, read the supplied design hire requirements page and anchor the prep on it. Use Slack and other Notion docs only to fill gaps or corroborate. Do not bake in role-specific needs from old candidates. For high-senior roles, do not assume people leadership, mentoring, or running critique is central unless the requirements page or prior feedback makes it central.
+Spell out abbreviations and replace product jargon with plain words. Use "hands-on design work" instead of "IC design", "main user flow" instead of "core loop", "simple priority map" instead of "impact-effort matrix", and "clear problem statement" instead of "job-to-be-done statement".
+Add a concise gap map so the rationale is visible: each question should show which R1 or R2 interviewer gap it covers and the source evidence behind that gap. Prefer tradeoffs: what the candidate chose, what they gave up, what happened, and what they learned.
+Questions must not use numbered lists. Under each question heading, write the question as plain paragraph text, then a `Look for:` line. `Look for:` must state the tradeoffs the designer is making, the choices to listen for, and what would raise or lower confidence for this hire.
+Do not ask candidates to bring artefacts. It is fine to say they can share screen if useful while answering.
+Example patterns:
+- If prior feedback says post-launch iteration needs more evidence, ask: "Tell us about a shipped project where you changed the design after launch. What signal led to the change, what did you choose, and what happened afterwards? You can share your screen if an artefact helps."
+- If prior feedback says stakeholder influence is unclear, ask: "Walk us through a time when product, engineering, and design disagreed. What tradeoff did you recommend, what did you give up, and how did the decision land?"
+- If prior feedback says strategic range is uncertain, ask: "Pick a project where the problem was ambiguous at the start. How did you narrow the brief, what alternatives did you reject, and how did you know the direction was working?"
+
+## Slack State Thread
+After the first Notion draft, send a Slack DM to Pras with the Notion link. That Slack message thread becomes the state machine for progress updates, blockers, and final approval. Batch Slack progress updates after each edit pass. Do not send one Slack reply per Notion comment.
+
+## Comment Loop
+Watch or re-check Notion comments on the meeting page. For each actionable comment:
+1. Apply the edit in Notion.
+2. Reply in that Notion comment thread with a short factual note.
+3. Do not resolve comments.
+If a comment is ambiguous, ask in the Notion comment thread.
+End only when Pras approves in the Slack thread with approved, done, ship, looks good, LGTM, or clear equivalent. If approval is unclear, ask once in the Slack thread.
