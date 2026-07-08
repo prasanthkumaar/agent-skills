@@ -1,9 +1,9 @@
 ---
-name: check-readability
+name: check-english-readability
 description: Checks and rewrites prose into a deterministic target-grade readability band using a bundled CLI. Use when writing, rewriting, editing, reviewing, simplifying, or shortening text where the user asks for clear writing, plain English, Hemingway-style readability, or a grade-level target.
 ---
 
-# Check Readability
+# Check English Readability
 
 Use this skill to make prose easier to read without flattening it. The default target is Grade 9 with an acceptable document band of Grade 8-9.
 
@@ -14,7 +14,7 @@ Use this skill to make prose easier to read without flattening it. The default t
 3. Run:
 
 ```sh
-node /Users/prasanth/.agents/skills/check-readability/scripts/check-readability.js --file /tmp/candidate.txt --reference-file /tmp/original.txt --max-grade 9
+node /Users/prasanth/.agents/skills/check-english-readability/scripts/check-english-readability.js --file /tmp/candidate.txt --reference-file /tmp/original.txt --max-grade 9
 ```
 
 4. If it fails, rewrite the flagged sentences and run the checker again.
@@ -56,5 +56,5 @@ node /Users/prasanth/.agents/skills/check-readability/scripts/check-readability.
 When returning edited prose, include the final verification line:
 
 ```text
-Verified by: check-readability.js --reference-file /tmp/original.txt --max-grade 9 exited 0
+Verified by: check-english-readability.js --reference-file /tmp/original.txt --max-grade 9 exited 0
 ```

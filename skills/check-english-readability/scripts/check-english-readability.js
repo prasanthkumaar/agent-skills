@@ -236,7 +236,7 @@ function main() {
 
     process.exitCode = report.passes ? 0 : 1;
   } catch (error) {
-    console.error(`check-readability: ${error.message}`);
+    console.error(`check-english-readability: ${error.message}`);
     process.exitCode = 2;
   }
 }
@@ -866,8 +866,8 @@ function printHumanReport(report) {
 
 function printHelp() {
   console.log(`Usage:
-  check-readability.js --file <path> [--reference-file <path>] [--max-grade 9] [--min-grade 8] [--target NORMAL] [--json]
-  cat text.txt | check-readability.js [--max-grade 9]
+  check-english-readability.js --file <path> [--reference-file <path>] [--max-grade 9] [--min-grade 8] [--target NORMAL] [--json]
+  cat text.txt | check-english-readability.js [--max-grade 9]
 
 Options:
   --file <path>                 Read text from a file. Use "-" for stdin.
