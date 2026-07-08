@@ -40,45 +40,43 @@ Write directly to the pre-created Notion meeting page once identity, page, and s
 Default structure:
 ```md
 ## Interview context
-Panel:
-Format:
-Purpose:
-Requirements source:
-Seat need:
-Prior round signals
-### R1 - [interviewer] - [exact Recruitee rating]
+**Panel:**
+**Format:**
+**Purpose:**
+**Requirements source:**
+**Seat need:**
+
+## Prior round signals
+[Notion toggle] R1 - [interviewer] - [Display rating]
 Strengths:
-- Signal:
-  Evidence:
+- **[Signal]:** [evidence]
 Gaps:
-- Gap:
-  What they saw:
-  Why it matters for this seat:
-### R2 - [interviewer] - [exact Recruitee rating]
+- **[Gap]:** [evidence]
+
+[Notion toggle] R2 - [interviewer] - [Display rating]
 Strengths:
-- Signal:
-  Evidence:
+- **[Signal]:** [evidence]
 Gaps:
-- Gap:
-  What they saw:
-  Why it matters for this seat:
+- **[Gap]:** [evidence]
+
 Gap map:
 - [question heading]: covers [round/interviewer gap] because [source evidence]
 ## Questions
 ### [2-3 word heading]
 [Question as a plain paragraph, not a numbered list]
-Look for: [tradeoffs, choices, and evidence that would raise or lower confidence]
+*Look for:* [tradeoffs, choices, and evidence that would raise or lower confidence]
 ```
 Do not include Candidate Q&A or Note for panel.
 
 ## Prep Rules
 Use simple British English at Hemingway grade 4 or below. Use short words, short sentences, and concrete verbs. Avoid em dashes, jargon, and the phrase "gap filling". Ask 5-6 main questions, grouped under short 2-3 word headings.
-Use exact Recruitee rating labels only: no, not sure, yes, strong yes. Never rename "not sure" as neutral.
-Prior round signals must name the round, interviewer, strengths, and gaps. Write enough context that Pras can understand the point without opening Recruitee. For each strength or gap, say what the interviewer saw, not just the label. Do not list a gap unless the source notes contain evidence for it. If the evidence is weak, say that plainly or omit the gap.
-Before choosing questions, read the supplied design hire requirements page and anchor the prep on it. Use Slack and other Notion docs only to fill gaps or corroborate. Do not bake in role-specific needs from old candidates. For high-senior roles, do not assume people leadership, mentoring, or running critique is central unless the requirements page or prior feedback makes it central.
+Use exact Recruitee rating categories but display them as: No, Not sure, Yes, Strong Yes. Never write neutral.
+Prior round signals must be Notion toggles titled `R1 - Name - Yes`. Inside each toggle, use concise bullets with a bold lead-in and one evidence sentence. Do not use nested labels like "What they saw" or "Why it matters". Do not list a gap unless the notes contain evidence. If evidence is weak, say "Weak signal" or omit it.
+Before choosing questions, read the supplied design hire requirements page and anchor the prep on it. Use Slack and other Notion docs only to fill gaps or corroborate. Do not bake in role-specific needs from old candidates. For high-senior roles, do not assume people leadership, mentoring, growing designers, or running critique is central unless the requirements page or strong prior feedback makes it central.
+Keep AI concepts separate: AI prototyping means using AI to build or test prototypes; AI as a product feature means putting AI into the user-facing feature set. Do not merge these into one signal or question.
 Spell out abbreviations and replace product jargon with plain words. Use "hands-on design work" instead of "IC design", "main user flow" instead of "core loop", "simple priority map" instead of "impact-effort matrix", and "clear problem statement" instead of "job-to-be-done statement".
 Add a concise gap map so the rationale is visible: each question should show which R1 or R2 interviewer gap it covers and the source evidence behind that gap. Prefer tradeoffs: what the candidate chose, what they gave up, what happened, and what they learned.
-Questions must not use numbered lists. Under each question heading, write the question as plain paragraph text, then a `Look for:` line. `Look for:` must state the tradeoffs the designer is making, the choices to listen for, and what would raise or lower confidence for this hire.
+Questions must not use numbered lists. Under each question heading, write the question as plain paragraph text, then an italic `Look for:` line. `Look for:` must state the tradeoffs the designer is making, the choices to listen for, and what would raise or lower confidence for this hire.
 Do not ask candidates to bring artefacts. It is fine to say they can share screen if useful while answering.
 Example patterns:
 - If prior feedback says post-launch iteration needs more evidence, ask: "Tell us about a shipped project where you changed the design after launch. What signal led to the change, what did you choose, and what happened afterwards? You can share your screen if an artefact helps."
@@ -89,6 +87,7 @@ Example patterns:
 After the first Notion draft, send a Slack DM to Pras with the Notion link. That Slack message thread becomes the state machine for progress updates, blockers, and final approval. Batch Slack progress updates after each edit pass. Do not send one Slack reply per Notion comment.
 
 ## Comment Loop
+Do not call the skill production-ready until this loop has been tested on a real or disposable Notion draft.
 Watch or re-check Notion comments on the meeting page. For each actionable comment:
 1. Apply the edit in Notion.
 2. Reply in that Notion comment thread with a short factual note.
