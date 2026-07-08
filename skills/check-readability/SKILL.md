@@ -1,20 +1,20 @@
 ---
 name: check-readability
-description: Checks and rewrites prose against a deterministic Grade 9 readability target using a bundled CLI. Use when writing, rewriting, editing, reviewing, simplifying, or shortening text where the user asks for clear writing, plain English, Hemingway-style readability, or a grade-level target.
+description: Checks and rewrites prose into a deterministic target-grade readability band using a bundled CLI. Use when writing, rewriting, editing, reviewing, simplifying, or shortening text where the user asks for clear writing, plain English, Hemingway-style readability, or a grade-level target.
 ---
 
 # Check Readability
 
-Use this skill to make prose easier to read. The default target is Grade 9 or lower.
+Use this skill to make prose easier to read without flattening it. The default target is Grade 9 with an acceptable document band of Grade 8-9.
 
 ## Quick Start
 
 1. Draft or rewrite the text.
-2. Save the candidate text to a temporary file.
+2. Save the original and candidate text to temporary files.
 3. Run:
 
 ```sh
-node /Users/prasanth/.agents/skills/check-readability/scripts/check-readability.js --file /tmp/candidate.txt --max-grade 9
+node /Users/prasanth/.agents/skills/check-readability/scripts/check-readability.js --file /tmp/candidate.txt --reference-file /tmp/original.txt --max-grade 9
 ```
 
 4. If it fails, rewrite the flagged sentences and run the checker again.
@@ -22,10 +22,15 @@ node /Users/prasanth/.agents/skills/check-readability/scripts/check-readability.
 
 ## Rules
 
-- Treat the checker as the source of truth for grade, hard sentences, and pass/fail.
-- Aim for Grade 9 or lower unless the user gives a different target.
+- Treat the checker as the source of truth for grade band, hard sentences, and pass/fail.
+- Aim for the raw visible grade band, not the lowest possible grade. For the default target, stop at Grade 8-9.
+- Do not simplify below the minimum grade unless the user explicitly asks for simpler text.
+- Let the checker's protected-term adjustment prevent false failures from product names, agency names, and acronyms.
 - Fix every sentence above the target grade, not only the document average.
-- Prefer shorter sentences, concrete verbs, common words, and direct order.
+- Prefer shorter sentences, concrete verbs, common words, and direct order, but keep adult tone.
+- Preserve the original paragraph count and line breaks unless the user asks for restructuring.
+- Do not split a sentence only because it contains a long product name, agency name, acronym, or parenthetical expansion.
+- Keep necessary proper nouns and acronyms inline. Do not expand them into separate explanatory sentences unless the original did.
 - Remove hedges such as `I think`, `maybe`, and `perhaps` unless meaning requires them.
 - Replace passive voice with active voice when the actor is known.
 - Keep domain terms when they are necessary; simplify the sentence around them.
@@ -33,20 +38,23 @@ node /Users/prasanth/.agents/skills/check-readability/scripts/check-readability.
 
 ## Rewrite Workflow
 
-1. Split any failing sentence into smaller statements.
+1. Make the smallest edit that moves the text into the target band.
 2. Put the main actor and action early.
-3. Replace abstract nouns with verbs where possible.
-4. Remove filler and duplicated qualifiers.
-5. Re-run the checker.
-6. Repeat until:
-   - document grade is `<= max-grade`
+3. Split only the clause that makes a sentence fail, and keep the result in the same paragraph.
+4. Replace abstract nouns with verbs where possible.
+5. Remove filler and duplicated qualifiers.
+6. Re-run the checker.
+7. Repeat until:
+   - document grade is between `min-grade` and `max-grade`
    - every sentence grade is `<= max-grade`
    - no very hard sentences remain
+   - paragraph count matches the reference text when `--reference-file` is used
+   - sentence count has not increased by more than the checker allows
 
 ## Output
 
 When returning edited prose, include the final verification line:
 
 ```text
-Verified by: check-readability.js --max-grade 9 exited 0
+Verified by: check-readability.js --reference-file /tmp/original.txt --max-grade 9 exited 0
 ```

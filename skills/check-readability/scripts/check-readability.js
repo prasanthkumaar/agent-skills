@@ -4,6 +4,7 @@
 const fs = require("fs");
 
 const DEFAULT_MAX_GRADE = 9;
+const DEFAULT_MAX_SENTENCE_INCREASE = 2;
 const DEFAULT_READING_TARGET = "NORMAL";
 
 const READABILITY_THRESHOLDS = {
@@ -27,6 +28,9 @@ const READABILITY_THRESHOLDS = {
 const SENTENCE_DELIMITER_SOURCE = String.raw`[.?!]{1,2}["”'\)]?(?:\s|$)|\n+`;
 const WORD_DELIMITER_SOURCE = String.raw`[^\w'-]`;
 const ABBREVIATION_AT_END = /\b(Mr|Ms|Mrs|Dr|U\.S|Col|Sgt|Lt|Adm|Maj|Sen|Rep|Jan|Feb|Apr|Mar|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|Pvt|Cpl|Capt|Gen|Ave|St|inc|ft|Gov|Jr|Sr|ltd|Rev|M|Mme|Prof|Pres|Hon|etc|vs|\.\.|e\.g|i\.e|a\.m|p\.m|[A-Z])$/;
+const ACRONYM = /\b[A-Z]{2,}[A-Z0-9-]*\b/g;
+const TECHNICAL_TOKEN = /\b[A-Z][a-z]+(?:[A-Z0-9][A-Za-z0-9-]*)\b/g;
+const TITLE_CASE_TERM = /\b[A-Z][A-Za-z0-9-]*(?:\s+(?:of|for|and|the|to|on|in|&|[A-Z][A-Za-z0-9-]*)){1,6}\b/g;
 
 const ADVERB_EXCEPTIONS = new Set([
   "actually",
@@ -242,6 +246,9 @@ function parseArguments(args) {
     file: undefined,
     json: false,
     maxGrade: DEFAULT_MAX_GRADE,
+    maxSentenceIncrease: DEFAULT_MAX_SENTENCE_INCREASE,
+    minGrade: undefined,
+    referenceFile: undefined,
     readingTarget: DEFAULT_READING_TARGET,
   };
 
@@ -266,6 +273,35 @@ function parseArguments(args) {
       index += 1;
       continue;
     }
+    if (arg === "--min-grade") {
+      const rawValue = requireValue(args, index, arg);
+      const parsed = Number.parseInt(rawValue, 10);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        throw new Error("--min-grade must be a non-negative integer");
+      }
+      options.minGrade = parsed;
+      index += 1;
+      continue;
+    }
+    if (arg === "--no-min-grade") {
+      options.minGrade = null;
+      continue;
+    }
+    if (arg === "--reference-file") {
+      options.referenceFile = requireValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--max-sentence-increase") {
+      const rawValue = requireValue(args, index, arg);
+      const parsed = Number.parseInt(rawValue, 10);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        throw new Error("--max-sentence-increase must be a non-negative integer");
+      }
+      options.maxSentenceIncrease = parsed;
+      index += 1;
+      continue;
+    }
     if (arg === "--target") {
       const target = requireValue(args, index, arg).toUpperCase();
       if (!READABILITY_THRESHOLDS[target]) {
@@ -280,6 +316,13 @@ function parseArguments(args) {
       process.exit(0);
     }
     throw new Error(`unknown argument: ${arg}`);
+  }
+
+  if (options.minGrade === undefined) {
+    options.minGrade = Math.max(0, options.maxGrade - 1);
+  }
+  if (options.minGrade !== null && options.minGrade > options.maxGrade) {
+    throw new Error("--min-grade must be less than or equal to --max-grade");
   }
 
   return options;
@@ -307,6 +350,7 @@ function readInput(options) {
 
 function analyseText(text, options = {}) {
   const maxGrade = options.maxGrade ?? DEFAULT_MAX_GRADE;
+  const minGrade = options.minGrade === undefined ? Math.max(0, maxGrade - 1) : options.minGrade;
   const readingTarget = normaliseReadingTarget(options.readingTarget);
   const parserSettings = { readingLevelTarget: readingTarget };
   const paragraphTexts = splitParagraphs(text);
@@ -316,43 +360,61 @@ function analyseText(text, options = {}) {
 
   const sentences = paragraphs.flatMap((paragraph) => paragraph.sentences);
   const totals = sumSentenceStats(sentences);
-  const readingLevel = calculateGrade({
+  const rawReadingLevel = calculateGrade({
     letters: totals.letters,
     sentences: sentences.length,
     words: totals.words,
   });
+  const readingLevel = calculateGrade({
+    letters: totals.effectiveLetters,
+    sentences: sentences.length,
+    words: totals.effectiveWords,
+  });
   const readability = classifyReadability({
     parserSettings,
     readingLevel,
-    words: totals.words,
+    words: totals.effectiveWords,
   });
-  const targetGradeBreaches = sentences.filter((sentence) => sentence.readingLevel > maxGrade);
-  const veryHardSentences = sentences.filter((sentence) => sentence.readability === "veryHard");
-  const hardSentences = sentences.filter((sentence) => sentence.readability === "hard");
+  const targetGradeBreaches = sentences.filter((sentence) => sentence.effectiveReadingLevel > maxGrade);
+  const veryHardSentences = sentences.filter((sentence) => sentence.effectiveReadability === "veryHard");
+  const hardSentences = sentences.filter((sentence) => sentence.effectiveReadability === "hard");
   const complexWords = sentences.flatMap((sentence) => sentence.issues.complex);
   const qualifiers = sentences.flatMap((sentence) => sentence.issues.qualifiers);
   const adverbs = sentences.flatMap((sentence) => sentence.issues.adverbs);
   const passiveVoice = sentences.flatMap((sentence) => sentence.issues.passiveVoice);
+  const reference = analyseReference(options.referenceFile, options.maxSentenceIncrease);
+  const shape = compareShape({
+    candidateParagraphs: paragraphs.length,
+    candidateSentences: sentences.length,
+    reference,
+  });
   const passes =
     readingLevel <= maxGrade &&
+    (minGrade === null || rawReadingLevel >= minGrade) &&
     targetGradeBreaches.length === 0 &&
-    veryHardSentences.length === 0;
+    veryHardSentences.length === 0 &&
+    shape.passes;
 
   return {
     passes,
     target: {
       maxGrade,
+      minGrade,
       readingTarget,
     },
+    shape,
     stats: {
       adverbs: adverbs.length,
       characters: text.length,
       complexWords: complexWords.length,
       hardSentences: hardSentences.length,
+      effectiveLetters: totals.effectiveLetters,
+      effectiveWords: totals.effectiveWords,
       letters: totals.letters,
       paragraphs: paragraphs.length,
       passiveVoice: passiveVoice.length,
       qualifiers: qualifiers.length,
+      rawReadingLevel,
       readability,
       readingLevel,
       sentences: sentences.length,
@@ -370,6 +432,46 @@ function analyseText(text, options = {}) {
       targetGradeBreaches,
       veryHardSentences,
     },
+  };
+}
+
+function analyseReference(referenceFile, maxSentenceIncrease) {
+  if (!referenceFile) {
+    return undefined;
+  }
+
+  const referenceText = fs.readFileSync(referenceFile, "utf8");
+  const paragraphs = splitParagraphs(referenceText);
+  const sentences = paragraphs.flatMap((paragraph) => splitSentences(paragraph));
+
+  return {
+    maxSentenceIncrease: maxSentenceIncrease ?? DEFAULT_MAX_SENTENCE_INCREASE,
+    paragraphs: paragraphs.length,
+    sentences: sentences.length,
+  };
+}
+
+function compareShape({ candidateParagraphs, candidateSentences, reference }) {
+  if (!reference) {
+    return {
+      passes: true,
+    };
+  }
+
+  const sentenceIncrease = candidateSentences - reference.sentences;
+  const paragraphCountMatches = candidateParagraphs === reference.paragraphs;
+  const sentenceIncreaseAllowed = sentenceIncrease <= reference.maxSentenceIncrease;
+
+  return {
+    candidateParagraphs,
+    candidateSentences,
+    maxSentenceIncrease: reference.maxSentenceIncrease,
+    paragraphCountMatches,
+    passes: paragraphCountMatches && sentenceIncreaseAllowed,
+    referenceParagraphs: reference.paragraphs,
+    referenceSentences: reference.sentences,
+    sentenceIncrease,
+    sentenceIncreaseAllowed,
   };
 }
 
@@ -430,25 +532,44 @@ function splitSentences(text) {
 function analyseSentence(text, context) {
   const words = splitWords(text);
   const letters = countLetters(words);
+  const protectedTerms = detectProtectedTerms(text);
+  const adjustedText = normaliseProtectedTerms(text, protectedTerms);
+  const adjustedWords = splitWords(adjustedText);
+  const adjustedLetters = countLetters(adjustedWords);
   const readingLevel = calculateGrade({
     letters,
     sentences: 1,
     words: words.length,
+  });
+  const effectiveReadingLevel = calculateGrade({
+    letters: adjustedLetters,
+    sentences: 1,
+    words: adjustedWords.length,
   });
   const readability = classifyReadability({
     parserSettings: context.parserSettings,
     readingLevel,
     words: words.length,
   });
+  const effectiveReadability = classifyReadability({
+    parserSettings: context.parserSettings,
+    readingLevel: effectiveReadingLevel,
+    words: adjustedWords.length,
+  });
 
   return {
     paragraphNumber: context.paragraphNumber,
     sentenceNumber: context.sentenceNumber,
     text,
+    protectedTerms: protectedTerms.map((term) => term.text),
     stats: {
+      effectiveLetters: adjustedLetters,
+      effectiveWords: adjustedWords.length,
       letters,
       words: words.length,
     },
+    effectiveReadingLevel,
+    effectiveReadability,
     readability,
     readingLevel,
     issues: detectIssues(text, words),
@@ -503,16 +624,95 @@ function classifyReadability({ parserSettings, readingLevel, words }) {
 
 function sumSentenceStats(sentences) {
   const totals = {
+    effectiveLetters: 0,
+    effectiveWords: 0,
     letters: 0,
     words: 0,
   };
 
   for (const sentence of sentences) {
+    totals.effectiveLetters += sentence.stats.effectiveLetters;
+    totals.effectiveWords += sentence.stats.effectiveWords;
     totals.letters += sentence.stats.letters;
     totals.words += sentence.stats.words;
   }
 
   return totals;
+}
+
+function detectProtectedTerms(text) {
+  const terms = [
+    ...findRegexMatches(text, ACRONYM),
+    ...findRegexMatches(text, TECHNICAL_TOKEN),
+    ...findRegexMatches(text, TITLE_CASE_TERM).filter(hasMultipleNameWords),
+  ];
+
+  return removeOverlappingTerms(terms);
+}
+
+function findRegexMatches(text, regex) {
+  const matches = [];
+  regex.lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    matches.push({
+      end: match.index + match[0].length,
+      start: match.index,
+      text: match[0],
+    });
+  }
+
+  return matches;
+}
+
+function hasMultipleNameWords(term) {
+  const nameWords = term.text.split(/\s+/).filter((word) => /^[A-Z][A-Za-z0-9-]*$/.test(word));
+  return nameWords.length >= 2;
+}
+
+function removeOverlappingTerms(terms) {
+  const sorted = [...terms].sort((left, right) => {
+    if (left.start !== right.start) {
+      return left.start - right.start;
+    }
+    return right.end - left.end;
+  });
+
+  const accepted = [];
+  for (const term of sorted) {
+    const overlaps = accepted.some((existing) => term.start < existing.end && term.end > existing.start);
+    if (!overlaps) {
+      accepted.push(term);
+    }
+  }
+
+  return accepted;
+}
+
+function normaliseProtectedTerms(text, protectedTerms) {
+  if (protectedTerms.length === 0) {
+    return text;
+  }
+
+  let result = "";
+  let cursor = 0;
+  for (const term of protectedTerms) {
+    result += text.slice(cursor, term.start);
+    result += placeholderForProtectedTerm(term.text);
+    cursor = term.end;
+  }
+  result += text.slice(cursor);
+  return result;
+}
+
+function placeholderForProtectedTerm(termText) {
+  const words = splitWords(termText);
+  if (words.length === 1) {
+    return "id";
+  }
+
+  return words.map(() => "name").join(" ");
 }
 
 function detectIssues(text, words) {
@@ -607,8 +807,16 @@ function buildPhraseCandidates(words, startIndex) {
 
 function printHumanReport(report) {
   const status = report.passes ? "PASS" : "FAIL";
+  const targetLabel =
+    report.target.minGrade === null
+      ? `target <= ${report.target.maxGrade}`
+      : `target ${report.target.minGrade}-${report.target.maxGrade}`;
   console.log(`Readability: ${status}`);
-  console.log(`Grade: ${report.stats.readingLevel} (target <= ${report.target.maxGrade})`);
+  const gradeLabel =
+    report.stats.rawReadingLevel === report.stats.readingLevel
+      ? `${report.stats.readingLevel}`
+      : `${report.stats.rawReadingLevel} raw (${report.stats.readingLevel} effective for protected terms)`;
+  console.log(`Grade: ${gradeLabel} (${targetLabel})`);
   console.log(
     `Words: ${report.stats.words} | Sentences: ${report.stats.sentences} | Letters: ${report.stats.letters}`,
   );
@@ -618,14 +826,39 @@ function printHumanReport(report) {
   console.log(
     `Adverbs: ${report.stats.adverbs} | Passive voice: ${report.stats.passiveVoice} | Qualifiers: ${report.stats.qualifiers} | Simpler alternatives: ${report.stats.complexWords}`,
   );
+  if (report.shape.referenceParagraphs !== undefined) {
+    console.log(
+      `Shape: ${report.shape.candidateParagraphs}/${report.shape.referenceParagraphs} paragraphs | ${report.shape.sentenceIncrease} sentence increase (max ${report.shape.maxSentenceIncrease})`,
+    );
+  }
 
-  const sentencesToRevise = report.issues.targetGradeBreaches;
-  if (sentencesToRevise.length > 0) {
+  if (report.target.minGrade !== null && report.stats.rawReadingLevel < report.target.minGrade) {
+    console.log("");
+    console.log(
+      `Too simple: raw document grade is below ${report.target.minGrade}. Restore nuance, combine short sentences, or keep necessary terms.`,
+    );
+  }
+
+  if (report.shape.referenceParagraphs !== undefined && !report.shape.paragraphCountMatches) {
+    console.log("");
+    console.log("Paragraph shape changed. Preserve the reference paragraph count unless asked otherwise.");
+  }
+
+  if (report.shape.referenceParagraphs !== undefined && !report.shape.sentenceIncreaseAllowed) {
+    console.log("");
+    console.log("Sentence count increased too much. Combine related sentences without exceeding the target grade.");
+  }
+
+  if (report.issues.targetGradeBreaches.length > 0) {
     console.log("");
     console.log("Sentences to revise:");
-    for (const sentence of sentencesToRevise) {
+    for (const sentence of report.issues.targetGradeBreaches) {
+      const gradeLabel =
+        sentence.readingLevel === sentence.effectiveReadingLevel
+          ? `Grade ${sentence.readingLevel}`
+          : `Grade ${sentence.readingLevel}, effective ${sentence.effectiveReadingLevel} after protected terms`;
       console.log(
-        `${sentence.paragraphNumber}.${sentence.sentenceNumber} Grade ${sentence.readingLevel}, ${sentence.readability}, ${sentence.stats.words} words: ${sentence.text}`,
+        `${sentence.paragraphNumber}.${sentence.sentenceNumber} ${gradeLabel}, ${sentence.effectiveReadability}, ${sentence.stats.words} words: ${sentence.text}`,
       );
     }
   }
@@ -633,14 +866,21 @@ function printHumanReport(report) {
 
 function printHelp() {
   console.log(`Usage:
-  check-readability.js --file <path> [--max-grade 9] [--target NORMAL] [--json]
+  check-readability.js --file <path> [--reference-file <path>] [--max-grade 9] [--min-grade 8] [--target NORMAL] [--json]
   cat text.txt | check-readability.js [--max-grade 9]
 
 Options:
-  --file <path>       Read text from a file. Use "-" for stdin.
-  --max-grade <n>     Required maximum document and sentence grade. Default: 9.
-  --target <name>     ACCESSIBLE, NORMAL, or TECHNICAL Hemingway thresholds. Default: NORMAL.
-  --json              Print structured JSON.
+  --file <path>                 Read text from a file. Use "-" for stdin.
+  --reference-file <path>       Compare paragraph count and sentence increase against the original text.
+  --max-grade <n>               Required maximum document and sentence grade. Default: 9.
+  --min-grade <n>               Required minimum document grade. Default: max-grade - 1.
+  --no-min-grade                Disable the minimum document grade.
+  --max-sentence-increase <n>   Allowed sentence increase when --reference-file is used. Default: 2.
+  --target <name>               ACCESSIBLE, NORMAL, or TECHNICAL Hemingway thresholds. Default: NORMAL.
+  --json                        Print structured JSON.
+
+Protected terms:
+  Proper nouns, product names, and acronyms are normalised for sentence pass/fail so a sentence is not split only because it contains long names.
 `);
 }
 
