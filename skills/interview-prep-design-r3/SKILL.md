@@ -42,18 +42,18 @@ Default structure:
 ## Interview context
 **Panel:**
 **Format:**
-**Purpose:**
+**Purpose:** [round or interview type]. To [abilities being tested].
 **Requirements source:**
 **Seat need:**
 
 ## Prior round signals
 **R1 - [interviewer] - [Display rating]**
-- **Strength - [signal]:** [evidence]
-- **Gap - [gap]:** [evidence]
+- **Strength:** [signal]. [evidence]
+- **Gap:** [gap]. [evidence]
 
 **R2 - [interviewer] - [Display rating]**
-- **Strength - [signal]:** [evidence]
-- **Gap - [gap]:** [evidence]
+- **Strength:** [signal]. [evidence]
+- **Gap:** [gap]. [evidence]
 
 ## Aspects to probe in Round 3
 - **[Ability to ...]:** In previous rounds [candidate] has not yet shown [specific ability]. [Interviewer] saw [concrete evidence or missing evidence]. This matters for this seat because [requirement from the supplied design hire requirements page].
@@ -66,9 +66,11 @@ Default structure:
 Do not include Candidate Q&A or Note for panel.
 
 ## Prep Rules
+Before drafting, read [OUTPUT_QUALITY.md](OUTPUT_QUALITY.md) and apply its signal, evidence, aspect, and question rules.
 Use simple British English at Hemingway grade 4 or below. Use short words, short sentences, and concrete verbs. Avoid em dashes, jargon, and the phrase "gap filling". Ask 5-6 main questions, grouped under the same aspect headings used in "Aspects to probe in Round 3".
 Use exact Recruitee rating categories but display them as: No, Not sure, Yes, Strong Yes. Never write neutral.
-Prior round signals must use bold round headers like `**R1 - Samantha Soh - Yes**`, followed by flat bullets like `- **Strength - Clear product taste:** ...` or `- **Gap - UI craft could be sharper:** ...`. Do not use Notion toggles. Do not use nested labels like "What they saw" or "Why it matters". Each strength or gap bullet needs enough context for a first-time reader: name the project or interview moment when known, state what the interviewer saw, and explain the judgement in 2-4 short sentences. Do not write one-line summaries unless the source note itself is only one line. Do not list a gap unless the notes contain evidence. If evidence is weak, say "Weak signal" or omit it.
+Write purpose as `**Purpose:** [round or interview type]. To [abilities being tested].` Do not use an em dash, a colon after the first label, or one long phrase.
+Prior round signals must use bold round headers like `**R1 - Samantha Soh - Yes**`, followed by flat bullets like `- **Strength:** Clear product taste. ...` or `- **Gap:** UI craft could be sharper. ...`. Only the `Strength:` or `Gap:` label is bold. The signal label after it is plain text, followed by a full stop before the evidence. Do not use Notion toggles. Do not use nested labels like "What they saw" or "Why it matters". Each strength or gap bullet needs enough context for a first-time reader: name the project or interview moment when known, state what the interviewer saw, and explain the judgement in 2-4 short sentences. Do not write one-line summaries unless the source note itself is only one line. Do not list a gap unless the notes contain evidence. If evidence is weak, say "Weak signal" or omit it.
 Before choosing questions, read the supplied design hire requirements page and anchor the prep on it. Use Slack and other Notion docs only to fill gaps or corroborate. Do not bake in role-specific needs from old candidates. For high-senior roles, do not assume people leadership, mentoring, growing designers, or running critique is central unless the requirements page or strong prior feedback makes it central.
 Keep AI concepts separate: AI prototyping means using AI to build or test prototypes; AI as a product feature means putting AI into the user-facing feature set. Do not merge these into one signal or question.
 Spell out abbreviations and replace product jargon with plain words. Use "hands-on design work" instead of "IC design", "main user flow" instead of "core loop", "simple priority map" instead of "impact-effort matrix", and "clear problem statement" instead of "job-to-be-done statement".
@@ -81,7 +83,11 @@ Example patterns:
 - If prior feedback says strategic range is uncertain, ask: "Pick a project where the problem was ambiguous at the start. How did you narrow the brief, what alternatives did you reject, and how did you know the direction was working?"
 
 ## Slack State Thread
-After the first Notion draft, send a Slack DM to Pras with the Notion link. That Slack message thread becomes the state machine for progress updates, blockers, and final approval. Batch Slack progress updates after each edit pass. Do not send one Slack reply per Notion comment.
+After the first Notion draft, send a Slack DM to Pras with the Notion link. Save the Slack channel ID, root message timestamp, and permalink. That root message thread is the only state machine for progress updates, blockers, and final approval.
+
+All later Slack updates must be replies in that original root thread. Never post batch updates as new standalone Slack messages. After each Slack update, verify it was posted under the saved root timestamp. If it was posted as a standalone message by mistake, post a corrective reply in the saved root thread with the same update, keep monitoring the saved root thread, and mention the stray message only if needed for debugging.
+
+Batch Slack progress updates after each edit pass. Do not send one Slack reply per Notion comment.
 
 ## Comment Loop
 Do not call the skill production-ready until this loop has been tested on a real or disposable Notion draft.
@@ -90,4 +96,6 @@ Watch or re-check Notion comments on the meeting page. For each actionable comme
 2. Reply in that Notion comment thread with a short factual note.
 3. Do not resolve comments.
 If a comment is ambiguous, ask in the Notion comment thread.
-End only when Pras approves in the Slack thread with approved, done, ship, looks good, LGTM, or clear equivalent. If approval is unclear, ask once in the Slack thread.
+After each comment pass, re-read the page and comments before posting the Slack batch update. Verify that every actionable comment has a reply from the current pass, no comment was resolved, no banned or near-banned labels remain, no weak or niche gap is promoted into "Aspects to probe", and every `Look for:` line states an actual design tradeoff. If any check fails, keep editing and replying before waiting for approval.
+
+Before each watch sleep, explicitly re-read replies in the saved Slack root thread. End only when Pras approves in that saved root thread with approved, done, ship, looks good, LGTM, or clear equivalent. Treat the approval as valid if it appears anywhere in the saved root thread after the latest batch update. If approval is unclear, ask once in the saved root thread.
