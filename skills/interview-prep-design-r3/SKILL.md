@@ -67,6 +67,7 @@ Do not include Candidate Q&A or Note for panel.
 
 ## Prep Rules
 Before drafting, read [OUTPUT_QUALITY.md](OUTPUT_QUALITY.md) and apply its signal, evidence, aspect, and question rules.
+Invoke the check-english-readability skill before writing the first draft to Notion and after every Notion comment edit pass. Save the visible prep text to a temp Markdown file and run `node /Users/prasanth/.agents/skills/check-english-readability/scripts/check-english-readability.js --file <prep.md> --max-grade 4 --no-min-grade`. If it fails, rewrite the flagged prose and rerun it until it exits 0. Do not write or mark an edit pass complete from style judgement alone.
 Use simple British English at Hemingway grade 4 or below. Use short words, short sentences, and concrete verbs. Avoid em dashes, jargon, and the phrase "gap filling". Ask 5-6 main questions, grouped under the same aspect headings used in "Aspects to probe in Round 3".
 Use exact Recruitee rating categories but display them as: No, Not sure, Yes, Strong Yes. Never write neutral.
 Write purpose as `**Purpose:** [round or interview type]. To [abilities being tested].` Do not use an em dash, a colon after the first label, or one long phrase.
@@ -96,6 +97,6 @@ Watch or re-check Notion comments on the meeting page. For each actionable comme
 2. Reply in that Notion comment thread with a short factual note.
 3. Do not resolve comments.
 If a comment is ambiguous, ask in the Notion comment thread.
-After each comment pass, re-read the page and comments before posting the Slack batch update. Verify that every actionable comment has a reply from the current pass, no comment was resolved, no banned or near-banned labels remain, no weak or niche gap is promoted into "Aspects to probe", and every `Look for:` line states an actual design tradeoff. If any check fails, keep editing and replying before waiting for approval.
+After each comment pass, re-read the page and comments before posting the Slack batch update. Verify that every actionable comment has a reply from the current pass, no comment was resolved, no banned or near-banned labels remain, no weak or niche gap is promoted into "Aspects to probe", every `Look for:` line states an actual design tradeoff, and the visible prep passes check-english-readability with `--max-grade 4 --no-min-grade`. If any check fails, keep editing and replying before waiting for approval.
 
 Before each watch sleep, explicitly re-read replies in the saved Slack root thread. End only when Pras approves in that saved root thread with approved, done, ship, looks good, LGTM, or clear equivalent. Treat the approval as valid if it appears anywhere in the saved root thread after the latest batch update. If approval is unclear, ask once in the saved root thread.
