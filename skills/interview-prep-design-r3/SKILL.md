@@ -33,6 +33,7 @@ Use evidence in this order:
 3. The supplied design hire requirements page for what the seat needs.
 4. Notion for the meeting page and durable hiring docs.
 5. Slack for hiring state, role context, decisions, and corroboration.
+Do not treat an overbroad Recruitee free-text search alone as a connector failure. If candidate search returns many loose matches, narrow with Calendar event title, Notion meeting page title, interview dates, job, stage, Recruitee interview events, and any candidate IDs exposed by event links. Fetch the exact Recruitee profile by ID once found. Stop only if these narrowing steps still leave multiple plausible profiles or no plausible profile.
 If multiple plausible candidates, events, profiles, pages, or seat definitions match, ask the user before drafting or writing.
 
 ## Notion Write
