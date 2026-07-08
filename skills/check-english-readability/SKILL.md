@@ -1,24 +1,36 @@
 ---
 name: check-english-readability
-description: Checks and rewrites prose into a deterministic target-grade readability band using a bundled CLI. Use when writing, rewriting, editing, reviewing, simplifying, or shortening text where the user asks for clear writing, plain English, Hemingway-style readability, or a grade-level target.
+description: Checks and rewrites Markdown prose into a deterministic target-grade readability band using a bundled CLI that strips Markdown syntax before scoring. Use when writing, rewriting, editing, reviewing, simplifying, or shortening Markdown text where the user asks for clear writing, plain English, Hemingway-style readability, or a grade-level target.
 ---
 
 # Check English Readability
 
-Use this skill to make prose easier to read without flattening it. The default target is Grade 9 with an acceptable document band of Grade 8-9.
+Use this skill to make Markdown prose easier to read without flattening it. The default target is Grade 9 with an acceptable document band of Grade 8-9.
 
 ## Quick Start
 
-1. Draft or rewrite the text.
-2. Save the original and candidate text to temporary files.
+1. Draft or rewrite the Markdown.
+2. Save the original and candidate Markdown to temporary `.md` files.
 3. Run:
 
 ```sh
-node /Users/prasanth/.agents/skills/check-english-readability/scripts/check-english-readability.js --file /tmp/candidate.txt --reference-file /tmp/original.txt --max-grade 9
+node /Users/prasanth/.agents/skills/check-english-readability/scripts/check-english-readability.js --file /tmp/candidate.md --reference-file /tmp/original.md --max-grade 9
 ```
 
 4. If it fails, rewrite the flagged sentences and run the checker again.
 5. Only report the final text as passing when the checker exits `0`.
+
+## Markdown Input
+
+- Pass `.md` files directly to `--file` and `--reference-file`; do not convert them to `.txt` first.
+- The checker cleans Markdown before it scores the text.
+- It removes front matter and comments.
+- It removes code blocks and rules.
+- It removes link reference lines.
+- It keeps text from links, images, tables, headings, quotes, and lists.
+- It removes the Markdown marks around that text.
+- Visible prose remains in the cleaned text.
+- It keeps paragraph breaks after cleanup. Shape checks still catch edits to structure.
 
 ## Rules
 
@@ -56,5 +68,5 @@ node /Users/prasanth/.agents/skills/check-english-readability/scripts/check-engl
 When returning edited prose, include the final verification line:
 
 ```text
-Verified by: check-english-readability.js --reference-file /tmp/original.txt --max-grade 9 exited 0
+Verified by: check-english-readability.js --file /tmp/candidate.md --reference-file /tmp/original.md --max-grade 9 exited 0
 ```

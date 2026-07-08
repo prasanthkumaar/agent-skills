@@ -2,10 +2,12 @@
 "use strict";
 
 const fs = require("fs");
+const path = require("path");
 
 const DEFAULT_MAX_GRADE = 9;
 const DEFAULT_MAX_SENTENCE_INCREASE = 2;
 const DEFAULT_READING_TARGET = "NORMAL";
+const MARKDOWN_EXTENSIONS = new Set([".md", ".markdown", ".mdown", ".mkd", ".mkdn"]);
 
 const READABILITY_THRESHOLDS = {
   ACCESSIBLE: {
@@ -225,7 +227,7 @@ const COMPLEX_ALTERNATIVES = new Map([
 function main() {
   try {
     const options = parseArguments(process.argv.slice(2));
-    const text = readInput(options);
+    const text = prepareInputText(readInput(options), options.file);
     const report = analyseText(text, options);
 
     if (options.json) {
@@ -348,6 +350,158 @@ function readInput(options) {
   throw new Error("provide text on stdin or with --file");
 }
 
+function prepareInputText(text, sourcePath) {
+  if (isMarkdownPath(sourcePath)) {
+    return stripMarkdownForReadability(text);
+  }
+
+  return text;
+}
+
+function isMarkdownPath(sourcePath) {
+  if (!sourcePath || sourcePath === "-") {
+    return false;
+  }
+
+  return MARKDOWN_EXTENSIONS.has(path.extname(sourcePath).toLowerCase());
+}
+
+function stripMarkdownForReadability(markdown) {
+  const normalised = markdown.replace(/\r\n?/g, "\n");
+  const withoutFrontMatter = stripYamlFrontMatter(normalised);
+  const withoutComments = withoutFrontMatter.replace(/<!--[\s\S]*?-->/g, "");
+  const withoutCodeBlocks = stripMarkdownCodeBlocks(withoutComments);
+
+  return withoutCodeBlocks
+    .split("\n")
+    .map(normaliseMarkdownLine)
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function stripYamlFrontMatter(markdown) {
+  const lines = markdown.split("\n");
+  if (lines[0]?.trim() !== "---") {
+    return markdown;
+  }
+
+  for (let index = 1; index < lines.length; index += 1) {
+    if (/^(---|\.\.\.)\s*$/.test(lines[index].trim())) {
+      return lines.slice(index + 1).join("\n");
+    }
+  }
+
+  return markdown;
+}
+
+function stripMarkdownCodeBlocks(markdown) {
+  const lines = markdown.split("\n");
+  const visibleLines = [];
+  let activeFenceMarker = undefined;
+
+  for (const line of lines) {
+    const fenceMatch = line.match(/^\s{0,3}(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      const marker = fenceMatch[1][0];
+      if (!activeFenceMarker) {
+        activeFenceMarker = marker;
+        continue;
+      }
+      if (activeFenceMarker === marker) {
+        activeFenceMarker = undefined;
+        continue;
+      }
+    }
+
+    if (activeFenceMarker) {
+      continue;
+    }
+
+    if (/^(?: {4}|\t)/.test(line)) {
+      continue;
+    }
+
+    visibleLines.push(line);
+  }
+
+  return visibleLines.join("\n");
+}
+
+function normaliseMarkdownLine(line) {
+  if (isMarkdownReferenceDefinition(line) || isMarkdownRule(line) || isMarkdownTableSeparator(line)) {
+    return "";
+  }
+
+  let result = line;
+  result = stripMarkdownBlockPrefixes(result);
+
+  if (isMarkdownTableRow(result)) {
+    return result
+      .replace(/^\s*\|/, "")
+      .replace(/\|\s*$/, "")
+      .split("|")
+      .map(stripInlineMarkdown)
+      .filter((cell) => cell.length > 0)
+      .join(". ");
+  }
+
+  return stripInlineMarkdown(result);
+}
+
+function isMarkdownReferenceDefinition(line) {
+  return /^\s{0,3}\[[^\]]+\]:\s+\S+/.test(line);
+}
+
+function isMarkdownRule(line) {
+  return /^\s{0,3}(?:[-*_]\s*){3,}$/.test(line);
+}
+
+function isMarkdownTableSeparator(line) {
+  return /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+}
+
+function isMarkdownTableRow(line) {
+  return line.includes("|");
+}
+
+function stripMarkdownBlockPrefixes(line) {
+  let result = line.replace(/^\s{0,3}#{1,6}\s*/, "").replace(/\s+#{1,6}\s*$/, "");
+
+  while (/^\s{0,3}>\s?/.test(result)) {
+    result = result.replace(/^\s{0,3}>\s?/, "");
+  }
+
+  result = result.replace(/^\s{0,3}(?:[-+*]|\d{1,9}[.)])\s+/, "");
+  result = result.replace(/^\s*\[[ xX]\]\s+/, "");
+  return result;
+}
+
+function stripInlineMarkdown(text) {
+  return text
+    .replace(/\\([\\`*{}\[\]()#+\-.!_>])/g, "$1")
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+    .replace(/!\[([^\]]*)\]\[[^\]]*\]/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\[([^\]]+)\]\[[^\]]*\]/g, "$1")
+    .replace(/\[\^[^\]]+\]/g, "")
+    .replace(/<https?:\/\/[^>\s]+>/g, " ")
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/~~([^~]+)~~/g, "$1")
+    .replace(/\*\*\*([^*]+)\*\*\*/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/___([^_]+)___/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    .replace(/_([^_]+)_/g, "$1")
+    .replace(/<[^>\n]+>/g, " ")
+    .replace(/\s+([,;:!?])/g, "$1")
+    .replace(/\s+\.(?=\s|$)/g, ".")
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
 function analyseText(text, options = {}) {
   const maxGrade = options.maxGrade ?? DEFAULT_MAX_GRADE;
   const minGrade = options.minGrade === undefined ? Math.max(0, maxGrade - 1) : options.minGrade;
@@ -440,7 +594,7 @@ function analyseReference(referenceFile, maxSentenceIncrease) {
     return undefined;
   }
 
-  const referenceText = fs.readFileSync(referenceFile, "utf8");
+  const referenceText = prepareInputText(fs.readFileSync(referenceFile, "utf8"), referenceFile);
   const paragraphs = splitParagraphs(referenceText);
   const sentences = paragraphs.flatMap((paragraph) => splitSentences(paragraph));
 
@@ -866,12 +1020,12 @@ function printHumanReport(report) {
 
 function printHelp() {
   console.log(`Usage:
-  check-english-readability.js --file <path> [--reference-file <path>] [--max-grade 9] [--min-grade 8] [--target NORMAL] [--json]
+  check-english-readability.js --file <path.md> [--reference-file <path.md>] [--max-grade 9] [--min-grade 8] [--target NORMAL] [--json]
   cat text.txt | check-english-readability.js [--max-grade 9]
 
 Options:
-  --file <path>                 Read text from a file. Use "-" for stdin.
-  --reference-file <path>       Compare paragraph count and sentence increase against the original text.
+  --file <path>                 Read text from a file. Markdown files are normalised to visible prose. Use "-" for stdin.
+  --reference-file <path>       Compare paragraph count and sentence increase against the original text after Markdown normalisation.
   --max-grade <n>               Required maximum document and sentence grade. Default: 9.
   --min-grade <n>               Required minimum document grade. Default: max-grade - 1.
   --no-min-grade                Disable the minimum document grade.
@@ -881,6 +1035,9 @@ Options:
 
 Protected terms:
   Proper nouns, product names, and acronyms are normalised for sentence pass/fail so a sentence is not split only because it contains long names.
+
+Markdown:
+  Files ending .md, .markdown, .mdown, .mkd, or .mkdn are stripped to visible prose before scoring. Front matter, comments, code blocks, reference definitions, and Markdown syntax are removed. Link labels, image alt text, table cells, headings, blockquotes, and list item text are kept.
 `);
 }
 
@@ -892,6 +1049,9 @@ module.exports = {
   analyseText,
   calculateGrade,
   classifyReadability,
+  isMarkdownPath,
+  prepareInputText,
   splitSentences,
   splitWords,
+  stripMarkdownForReadability,
 };
