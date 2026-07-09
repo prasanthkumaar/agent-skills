@@ -5,7 +5,7 @@ description: Runs every review lane on the full branch diff using fresh-context 
 
 # Multi Review
 
-Orchestrates read-only review lanes. It does not fix, reply, or update PR descriptions.
+Runs read-only review lanes. It does not fix, reply, or update PR descriptions.
 
 ## Inputs
 
@@ -17,19 +17,29 @@ Orchestrates read-only review lanes. It does not fix, reply, or update PR descri
 
 ## Review lanes
 
-Run all lanes for every branch:
+Before global lanes, find repo-local review skills:
+
+- Look for `SKILL.md` files under `./.agents/skills/review-*` and `./.claude/skills/review-*` in the target repo.
+- Read each local review skill before spawning its reviewer.
+- Run matching local review skills as extra read-only lanes for every branch. For example, run repo-local `review-typescript` when the branch touches TypeScript or TSX files.
+- If the local skill's trigger scope is unclear, run it and record raw findings. `triage` owns validity decisions.
+- If `.agents` and `.claude` contain the same review skill with identical Markdown, run it once and record both source paths. If the contents differ, run both as separate local lanes.
+- Local review skills add repo-specific judgement. They do not replace the global lanes below.
+
+Run all global lanes for every branch:
 
 - `review-docs-check`
 - `review-bug`
 - `review-security`
-- `review-codebase-standards`
+- `review-code-quality`
+- `review-spec`
 - `review-pr-accuracy`
 
 Each lane gets the whole branch diff against its parent, not changed-file slices.
 
 ## Stack order
 
-Review bottom-up. If a child branch finding belongs in a parent, record the parent as owner so `triage` can route the fix before continuing upward.
+Review bottom-up. If a child branch finding belongs in a parent, record the parent as owner. `triage` can route the fix before review continues upward.
 
 ## Ledger
 

@@ -18,6 +18,8 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | `docs-check` | Read-only documented-pattern check for framework/library/API/config/test/story changes |
 | `research-options` | Compare broad options before deciding |
 | `multi-review` | Run all fresh-context review lanes across a branch or stack |
+| `review-code-quality` | Review repo conventions, code readability, and maintainability smells |
+| `review-spec` | Review whether a diff matches the originating issue, PRD, ticket, or spec |
 | `triage` | Classify review findings, GitHub comments, CI, chat feedback, and manual verification |
 | `fix-and-verify` | Apply triaged fixes with branch-owned fresh-context fix agents |
 | `capture-evidence` | Capture local command/browser/screenshot evidence into an OS-temp manifest |
@@ -54,7 +56,8 @@ code-writing → docs-check/research-options as needed → multi-review → tria
 - `review-docs-check`
 - `review-bug`
 - `review-security`
-- `review-codebase-standards`
+- `review-code-quality`
+- `review-spec`
 - `review-pr-accuracy`
 
 Other skills may exist globally (`~/.agents/skills/`) but not yet in this repo — migrate here when you want them versioned.
@@ -78,7 +81,7 @@ Use **`add` from the local path**, not `update` — `update` pulls from GitHub a
 Refresh all repo skills:
 
 ```bash
-for s in build-context to-plan build-pr ready-pr update-pr code-writing check-english-readability docs-check research-options multi-review review-docs-check review-bug review-security review-codebase-standards review-pr-accuracy triage fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
+for s in build-context to-plan build-pr ready-pr update-pr code-writing check-english-readability docs-check research-options multi-review review-docs-check review-bug review-security review-code-quality review-spec review-pr-accuracy triage fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
   npx skills add ~/ai/agent-skills -s "$s" -g -y
 done
 ```
