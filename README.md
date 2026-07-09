@@ -14,7 +14,7 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | `update-pr` | Existing PR or stack → apply deltas, rerun review/fix loop, refresh evidence and descriptions |
 | `ready-pr` | Existing PR or stack → start at multi-review and drive findings to readiness |
 | `code-writing` | Document-shaped code with explicit contracts and readable structure |
-| `check-english-readability` | Deterministic Grade 9 English readability checks and rewrite gate |
+| `write-readable-english` | Writes and checks readable English at Grade 9 by default |
 | `docs-check` | Read-only documented-pattern check for framework/library/API/config/test/story changes |
 | `research-options` | Compare broad options before deciding |
 | `multi-review` | Run all fresh-context review lanes across a branch or stack |
@@ -81,7 +81,7 @@ Use **`add` from the local path**, not `update` — `update` pulls from GitHub a
 Refresh all repo skills:
 
 ```bash
-for s in build-context to-plan build-pr ready-pr update-pr code-writing check-english-readability docs-check research-options multi-review review-docs-check review-bug review-security review-code-quality review-spec review-pr-accuracy triage fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
+for s in build-context to-plan build-pr ready-pr update-pr code-writing write-readable-english docs-check research-options multi-review review-docs-check review-bug review-security review-code-quality review-spec review-pr-accuracy triage fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
   npx skills add ~/ai/agent-skills -s "$s" -g -y
 done
 ```

@@ -249,7 +249,7 @@ function parseArguments(args) {
     json: false,
     maxGrade: DEFAULT_MAX_GRADE,
     maxSentenceIncrease: DEFAULT_MAX_SENTENCE_INCREASE,
-    minGrade: undefined,
+    minGrade: null,
     referenceFile: undefined,
     readingTarget: DEFAULT_READING_TARGET,
   };
@@ -285,10 +285,6 @@ function parseArguments(args) {
       index += 1;
       continue;
     }
-    if (arg === "--no-min-grade") {
-      options.minGrade = null;
-      continue;
-    }
     if (arg === "--reference-file") {
       options.referenceFile = requireValue(args, index, arg);
       index += 1;
@@ -318,10 +314,6 @@ function parseArguments(args) {
       process.exit(0);
     }
     throw new Error(`unknown argument: ${arg}`);
-  }
-
-  if (options.minGrade === undefined) {
-    options.minGrade = Math.max(0, options.maxGrade - 1);
   }
   if (options.minGrade !== null && options.minGrade > options.maxGrade) {
     throw new Error("--min-grade must be less than or equal to --max-grade");
@@ -504,7 +496,7 @@ function stripInlineMarkdown(text) {
 
 function analyseText(text, options = {}) {
   const maxGrade = options.maxGrade ?? DEFAULT_MAX_GRADE;
-  const minGrade = options.minGrade === undefined ? Math.max(0, maxGrade - 1) : options.minGrade;
+  const minGrade = options.minGrade ?? null;
   const readingTarget = normaliseReadingTarget(options.readingTarget);
   const parserSettings = { readingLevelTarget: readingTarget };
   const paragraphTexts = splitParagraphs(text);
@@ -1020,15 +1012,14 @@ function printHumanReport(report) {
 
 function printHelp() {
   console.log(`Usage:
-  check-english-readability.js --file <path.md> [--reference-file <path.md>] [--max-grade 9] [--min-grade 8] [--target NORMAL] [--json]
+  check-english-readability.js --file <path.md> [--reference-file <path.md>] [--max-grade 9] [--min-grade n] [--target NORMAL] [--json]
   cat text.txt | check-english-readability.js [--max-grade 9]
 
 Options:
   --file <path>                 Read text from a file. Markdown files are normalised to visible prose. Use "-" for stdin.
   --reference-file <path>       Compare paragraph count and sentence increase against the original text after Markdown normalisation.
   --max-grade <n>               Required maximum document and sentence grade. Default: 9.
-  --min-grade <n>               Required minimum document grade. Default: max-grade - 1.
-  --no-min-grade                Disable the minimum document grade.
+  --min-grade <n>               Optional minimum document grade for explicit band checks. Default: none.
   --max-sentence-increase <n>   Allowed sentence increase when --reference-file is used. Default: 2.
   --target <name>               ACCESSIBLE, NORMAL, or TECHNICAL Hemingway thresholds. Default: NORMAL.
   --json                        Print structured JSON.

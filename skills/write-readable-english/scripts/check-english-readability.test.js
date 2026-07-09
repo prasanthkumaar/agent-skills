@@ -135,7 +135,7 @@ function testCliAcceptsMarkdownAndScoresVisibleProseOnly() {
 
   const result = spawnSync(
     process.execPath,
-    [CLI_PATH, "--file", markdownPath, "--max-grade", "9", "--no-min-grade", "--json"],
+    [CLI_PATH, "--file", markdownPath, "--max-grade", "9", "--json"],
     { encoding: "utf8" },
   );
 
