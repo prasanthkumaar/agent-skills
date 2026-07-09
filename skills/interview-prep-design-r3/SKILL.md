@@ -1,6 +1,6 @@
 ---
 name: interview-prep-design-r3
-description: Creates interviewer prep for Round 3 designer interviews directly in the correct Notion meeting page. Use when the user says /interview-prep-design-r3 with a candidate and a design hire requirements Notion link.
+description: Creates interviewer prep for Round 3 designer interviews directly in the correct Notion meeting page and stops after writing. Use when a designer says /interview-prep-design-r3 with a candidate and a design hire requirements Notion link.
 ---
 
 # Interview Prep Design R3
@@ -9,13 +9,12 @@ description: Creates interviewer prep for Round 3 designer interviews directly i
 Before checking connectors or doing any lookup, the command must include both:
 - Candidate name
 - Design hire requirements Notion link
-If the requirements link is missing, blocked, ambiguous, or not a Notion page, stop and tell the user: "Blocked: missing usable design hire requirements Notion link." Do not infer the requirements page from Slack, Calendar, Notion search, or prior runs.
+If the requirements link is missing, blocked, ambiguous, or not a Notion page, stop and tell the user: "Blocked: missing usable design hire requirements Notion link." Use only the requirements page supplied in the command.
 
-Before drafting, writing, or messaging anywhere, check that all required connectors are available and usable:
+Before drafting or writing anywhere, check that all required connectors are available and usable:
 - Calendar
 - Recruitee
 - Notion
-- Slack
 If any connector is missing, blocked, unauthorised, or unreliable, stop and tell the user which connector is blocked. Do not draft from partial access.
 Create interviewer prep only. Never draft candidate-facing prep or messages as part of this skill.
 
@@ -32,12 +31,12 @@ Use evidence in this order:
 2. Calendar for event, panel, date, format, and linked meeting page.
 3. The supplied design hire requirements page for what the seat needs.
 4. Notion for the meeting page and durable hiring docs.
-5. Slack for hiring state, role context, decisions, and corroboration.
 Do not treat an overbroad Recruitee free-text search alone as a connector failure. If candidate search returns many loose matches, narrow with Calendar event title, Notion meeting page title, interview dates, job, stage, Recruitee interview events, and any candidate IDs exposed by event links. Fetch the exact Recruitee profile by ID once found. Stop only if these narrowing steps still leave multiple plausible profiles or no plausible profile.
 If multiple plausible candidates, events, profiles, pages, or seat definitions match, ask the user before drafting or writing.
 
 ## Notion Write
 Write directly to the pre-created Notion meeting page once identity, page, and source access are unambiguous. Preserve the meeting notes block at the top. Write or replace only the interviewer prep section below it. Never create a new Notion page unless the user explicitly asks.
+After the Notion write succeeds, stop. Report the page link and a short summary of what was written.
 Default structure:
 ```md
 ## Interview context
@@ -68,12 +67,12 @@ Do not include Candidate Q&A or Note for panel.
 
 ## Prep Rules
 Before drafting, read [OUTPUT_QUALITY.md](OUTPUT_QUALITY.md) and apply its signal, evidence, aspect, and question rules.
-Invoke the write-readable-english skill before writing the first draft to Notion and after every Notion comment edit pass. Save the visible prep text to a temp Markdown file and run `node /Users/prasanth/.agents/skills/write-readable-english/scripts/check-english-readability.js --file <prep.md> --max-grade 9`. If it fails, rewrite only the flagged prose and rerun it until it exits 0. Do not write or mark an edit pass complete from style judgement alone. Do not use a custom grade script as a substitute for this command.
+Invoke the check-english-readability skill before writing the draft to Notion. Save the visible prep text to a temp Markdown file and run `node "$HOME/.agents/skills/check-english-readability/scripts/check-english-readability.js" --file <prep.md> --max-grade 9`. If it fails, rewrite only the flagged prose and rerun it until it exits 0. Do not write from style judgement alone. Do not use a custom grade script as a substitute for this command.
 Write at the readability skill default: target Grade 9 with no minimum grade. Do not chase the lowest possible grade. Prefer the smallest edits that make the checker pass while preserving adult nuance, domain terms, and useful specificity. Use clear British English, concrete verbs, and direct order. Avoid em dashes, jargon, and the phrase "gap filling". Ask 5-6 main questions, grouped under the same aspect headings used in "Aspects to probe in Round 3".
 Use exact Recruitee rating categories but display them as: No, Not sure, Yes, Strong Yes. Never write neutral.
 Write purpose as `**Purpose:** [round or interview type]. To [abilities being tested].` Do not use an em dash, a colon after the first label, or one long phrase.
-Prior round signals must use bold round headers like `**R1 - Samantha Soh - Yes**`, followed by flat bullets like `- **Strength:** Clear product taste. ...` or `- **Gap:** UI craft could be sharper. ...`. Only the `Strength:` or `Gap:` label is bold. The signal label after it is plain text, followed by a full stop before the evidence. Do not use Notion toggles. Do not use nested labels like "What they saw" or "Why it matters". Each strength or gap bullet needs enough context for a first-time reader: name the project or interview moment when known, state what the interviewer saw, and explain the judgement in 2-4 short sentences. Do not write one-line summaries unless the source note itself is only one line. Do not list a gap unless the notes contain evidence. If evidence is weak, say "Weak signal" or omit it.
-Before choosing questions, read the supplied design hire requirements page and anchor the prep on it. Use Slack and other Notion docs only to fill gaps or corroborate. Do not bake in role-specific needs from old candidates. For high-senior roles, do not assume people leadership, mentoring, growing designers, or running critique is central unless the requirements page or strong prior feedback makes it central.
+Prior round signals must use bold round headers like `**R1 - [Interviewer] - Yes**`, followed by flat bullets like `- **Strength:** Clear product taste. ...` or `- **Gap:** UI craft could be sharper. ...`. Only the `Strength:` or `Gap:` label is bold. The signal label after it is plain text, followed by a full stop before the evidence. Do not use Notion toggles. Do not use nested labels like "What they saw" or "Why it matters". Each strength or gap bullet needs enough context for a first-time reader: name the project or interview moment when known, state what the interviewer saw, and explain the judgement in 2-4 short sentences. Do not write one-line summaries unless the source note itself is only one line. Do not list a gap unless the notes contain evidence. If evidence is weak, say "Weak signal" or omit it.
+Before choosing questions, read the supplied design hire requirements page and anchor the prep on it. Use other Notion hiring docs only to fill gaps or corroborate. Do not bake in role-specific needs from old candidates. For high-senior roles, do not assume people leadership, mentoring, growing designers, or running critique is central unless the requirements page or strong prior feedback makes it central.
 Keep AI concepts separate: AI prototyping means using AI to build or test prototypes; AI as a product feature means putting AI into the user-facing feature set. Do not merge these into one signal or question.
 Spell out abbreviations and replace product jargon with plain words. Use "hands-on design work" instead of "IC design", "main user flow" instead of "core loop", "simple priority map" instead of "impact-effort matrix", and "clear problem statement" instead of "job-to-be-done statement".
 Use "Aspects to probe in Round 3" as the only rationale section before questions. Each aspect must link three things in plain language: the ability still not proven, the prior-round evidence or missing evidence, and why the supplied design hire requirements make it worth probing. Use aspect headings that are short but clear enough to stand alone, for example "Ability to design defensively against spoofs". Do not use vague headings like "Strategy", "Craft", or "Risk".
@@ -83,21 +82,3 @@ Example patterns:
 - If prior feedback says post-launch iteration needs more evidence, ask: "Tell us about a shipped project where you changed the design after launch. What signal led to the change, what did you choose, and what happened afterwards? You can share your screen if an artefact helps."
 - If prior feedback says stakeholder influence is unclear, ask: "Walk us through a time when product, engineering, and design disagreed. What tradeoff did you recommend, what did you give up, and how did the decision land?"
 - If prior feedback says strategic range is uncertain, ask: "Pick a project where the problem was ambiguous at the start. How did you narrow the brief, what alternatives did you reject, and how did you know the direction was working?"
-
-## Slack State Thread
-After the first Notion draft, send a Slack DM to Pras with the Notion link. Save the Slack channel ID, root message timestamp, and permalink. That root message thread is the only state machine for progress updates, blockers, and final approval.
-
-All later Slack updates must be replies in that original root thread. Never post batch updates as new standalone Slack messages. After each Slack update, verify it was posted under the saved root timestamp. If it was posted as a standalone message by mistake, post a corrective reply in the saved root thread with the same update, keep monitoring the saved root thread, and mention the stray message only if needed for debugging.
-
-Batch Slack progress updates after each edit pass. Do not send one Slack reply per Notion comment.
-
-## Comment Loop
-Do not call the skill production-ready until this loop has been tested on a real or disposable Notion draft.
-Watch or re-check Notion comments on the meeting page. For each actionable comment:
-1. Apply the edit in Notion.
-2. Reply in that Notion comment thread with a short factual note.
-3. Do not resolve comments.
-If a comment is ambiguous, ask in the Notion comment thread.
-After each comment pass, re-read the page and comments before posting the Slack batch update. Verify that every actionable comment has a reply from the current pass, no comment was resolved, no banned or near-banned labels remain, no weak or niche gap is promoted into "Aspects to probe", every `Look for:` line states an actual design tradeoff, and the visible prep passes write-readable-english with `--max-grade 9`. If any check fails, keep editing and replying before waiting for approval.
-
-Before each watch sleep, explicitly re-read replies in the saved Slack root thread. End only when Pras approves in that saved root thread with approved, done, ship, looks good, LGTM, or clear equivalent. Treat the approval as valid if it appears anywhere in the saved root thread after the latest batch update. If approval is unclear, ask once in the saved root thread.
