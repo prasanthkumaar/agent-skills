@@ -16,7 +16,7 @@ Before drafting or writing anywhere, check that all required connectors are avai
 - Recruitee
 - Notion
 If any connector is missing, blocked, unauthorised, or unreliable, stop and tell the user which connector is blocked. Do not draft from partial access.
-Create interviewer prep only. Never draft candidate-facing prep or messages as part of this skill.
+Create interviewer prep only. Never draft candidate-facing prep or messages as part of this workflow.
 
 ## Identity Checks
 Before writing, determine all of these unambiguously:
@@ -67,8 +67,7 @@ Do not include Candidate Q&A or Note for panel.
 
 ## Prep Rules
 Before drafting, read [OUTPUT_QUALITY.md](OUTPUT_QUALITY.md) and apply its signal, evidence, aspect, and question rules.
-Invoke the check-english-readability skill before writing the draft to Notion. Save the visible prep text to a temp Markdown file and run `node "$HOME/.agents/skills/check-english-readability/scripts/check-english-readability.js" --file <prep.md> --max-grade 9`. If it fails, rewrite only the flagged prose and rerun it until it exits 0. Do not write from style judgement alone. Do not use a custom grade script as a substitute for this command.
-Write at the readability skill default: target Grade 9 with no minimum grade. Do not chase the lowest possible grade. Prefer the smallest edits that make the checker pass while preserving adult nuance, domain terms, and useful specificity. Use clear British English, concrete verbs, and direct order. Avoid em dashes, jargon, and the phrase "gap filling". Ask 5-6 main questions, grouped under the same aspect headings used in "Aspects to probe in Round 3".
+Write clear British English at roughly Grade 9. Keep the prose easy to scan, but do not flatten useful nuance or necessary domain terms. Prefer concrete verbs, direct order, and specific evidence. Avoid em dashes, jargon, and the phrase "gap filling". Ask 5-6 main questions, grouped under the same aspect headings used in "Aspects to probe in Round 3".
 Use exact Recruitee rating categories but display them as: No, Not sure, Yes, Strong Yes. Never write neutral.
 Write purpose as `**Purpose:** [round or interview type]. To [abilities being tested].` Do not use an em dash, a colon after the first label, or one long phrase.
 Prior round signals must use bold round headers like `**R1 - [Interviewer] - Yes**`, followed by flat bullets like `- **Strength:** Clear product taste. ...` or `- **Gap:** UI craft could be sharper. ...`. Only the `Strength:` or `Gap:` label is bold. The signal label after it is plain text, followed by a full stop before the evidence. Do not use Notion toggles. Do not use nested labels like "What they saw" or "Why it matters". Each strength or gap bullet needs enough context for a first-time reader: name the project or interview moment when known, state what the interviewer saw, and explain the judgement in 2-4 short sentences. Do not write one-line summaries unless the source note itself is only one line. Do not list a gap unless the notes contain evidence. If evidence is weak, say "Weak signal" or omit it.
