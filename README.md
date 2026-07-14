@@ -17,6 +17,8 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | `write-readable-english` | Writes and checks readable English at Grade 9 by default |
 | `docs-check` | Read-only documented-pattern check for framework/library/API/config/test/story changes |
 | `research-options` | Compare broad options before deciding |
+| `manage-agent-skills` | Create, update, install, remove, commit, or publish repo-owned custom skills |
+| `audit-agent-skills` | Read-only provenance and installation-integrity audit across repo, global installs, and Claude links |
 | `multi-review` | Run all fresh-context review lanes across a branch or stack |
 | `review-code-quality` | Review repo conventions, code readability, and maintainability smells |
 | `review-spec` | Review whether a diff matches the originating issue, PRD, ticket, or spec |
@@ -64,6 +66,8 @@ Other skills may exist globally (`~/.agents/skills/`) but not yet in this repo �
 
 ## Day-to-day workflow
 
+Use `manage-agent-skills` for lifecycle changes and `audit-agent-skills` for read-only integrity checks.
+
 **1. Edit** — only under `skills/<name>/`. Never edit `~/.agents/skills/` or `~/.claude/skills/` directly.
 
 **2. Refresh global install** (local test; no push required):
@@ -81,7 +85,7 @@ Use **`add` from the local path**, not `update` — `update` pulls from GitHub a
 Refresh all repo skills:
 
 ```bash
-for s in build-context to-plan build-pr ready-pr update-pr code-writing write-readable-english docs-check research-options multi-review review-docs-check review-bug review-security review-code-quality review-spec review-pr-accuracy triage fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
+for s in build-context to-plan build-pr ready-pr update-pr code-writing write-readable-english docs-check research-options manage-agent-skills audit-agent-skills interview-prep-design-r3 multi-review review-docs-check review-bug review-security review-code-quality review-spec review-pr-accuracy triage fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
   npx skills add ~/ai/agent-skills -s "$s" -g -y
 done
 ```
