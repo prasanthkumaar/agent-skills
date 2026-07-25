@@ -24,7 +24,7 @@ For each finding include:
 - exploit or failure scenario
 - affected data or capability
 - evidence from code
-- suggested triage judgement if obvious
+- recommended action if the evidence supports one
 
 ## Hard rules
 

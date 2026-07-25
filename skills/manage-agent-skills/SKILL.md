@@ -1,6 +1,7 @@
 ---
 name: manage-agent-skills
-description: Manages custom skills whose source of truth is ~/ai/agent-skills. Use when creating, updating, installing, removing, committing, or publishing a repo-owned skill through npx skills.
+description: Manages custom skills whose source of truth is ~/ai/agent-skills. Explicit user invocation only for creating, updating, installing, removing, committing, or publishing a repo-owned skill through npx skills.
+disable-model-invocation: true
 ---
 
 # Manage Agent Skills
@@ -22,6 +23,13 @@ Keep `~/ai/agent-skills/skills/<skill-name>/` as the source of truth. Installed 
 ```bash
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
   ~/ai/agent-skills/skills/<skill-name>
+```
+
+Any failure is fatal unless its complete output is exactly `Unexpected key(s) in SKILL.md frontmatter: disable-model-invocation. Allowed properties are: allowed-tools, description, license, metadata, name`. For only that known schema-lag failure, validate both invocation guards:
+
+```bash
+ruby -e 'require "yaml"; text = File.read(ARGV[0]); data = YAML.safe_load(text.split(/^---\s*$\n/)[1]); abort unless data["disable-model-invocation"] == true' ~/ai/agent-skills/skills/<skill-name>/SKILL.md
+ruby -e 'require "yaml"; data = YAML.safe_load(File.read(ARGV[0])); abort unless data.dig("policy", "allow_implicit_invocation") == false' ~/ai/agent-skills/skills/<skill-name>/agents/openai.yaml
 ```
 
 3. Install the named skill from the local working tree:

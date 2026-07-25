@@ -77,4 +77,4 @@ This keeps preview setup with the code that owns it.
 
 ## Output
 
-Return PR links and their draft or ready state. Include uploaded image URLs and any accuracy gaps that still need triage.
+Return PR links and their draft or ready state. Include uploaded image URLs and any accuracy gaps that still need a decision.

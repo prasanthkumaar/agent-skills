@@ -34,7 +34,7 @@ For each finding include:
 - expected documented pattern
 - current code behaviour
 - why it matters
-- suggested triage judgement if obvious
+- recommended action if the evidence supports one
 
 ## Hard rules
 

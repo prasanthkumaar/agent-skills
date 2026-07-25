@@ -24,7 +24,7 @@ For each finding include:
 - user-visible or developer-visible impact
 - evidence from the diff or nearby code
 - minimal reproduction or failing scenario when possible
-- suggested triage judgement if obvious
+- recommended action if the evidence supports one
 
 ## Hard rules
 

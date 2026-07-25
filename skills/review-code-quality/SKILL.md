@@ -50,7 +50,7 @@ For each finding include:
 - evidence from the diff and cited standard or named smell
 - whether it is a hard documented-standard violation or a judgement call
 - why this matters
-- suggested triage judgement if obvious
+- recommended action if the evidence supports one
 
 ## Hard Rules
 

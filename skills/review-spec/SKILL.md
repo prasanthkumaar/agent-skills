@@ -50,7 +50,7 @@ For each finding include:
 - finding summary
 - quoted requirement or claim
 - diff evidence
-- suggested triage judgement if obvious
+- recommended action if the evidence supports one
 
 ## Hard Rules
 

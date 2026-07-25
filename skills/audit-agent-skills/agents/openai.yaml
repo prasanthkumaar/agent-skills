@@ -1,0 +1,5 @@
+interface:
+  display_name: "Audit Agent Skills"
+  short_description: "Check skill installation integrity"
+policy:
+  allow_implicit_invocation: false

@@ -33,7 +33,7 @@ For each finding include:
 - inaccurate or missing claim
 - evidence from diff, PR body, or manifest
 - required correction
-- suggested triage judgement if obvious
+- recommended action if the evidence supports one
 
 ## Hard rules
 

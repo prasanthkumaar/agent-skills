@@ -1,22 +1,23 @@
 ---
 name: fix-and-verify
-description: Applies triaged fixes with fresh-context branch-owned fix agents, verifies the fixes, and drafts evidence-backed replies without posting them. Use after triage has produced fix or reply-only items for one PR or a stacked PR set.
+description: Applies explicitly selected review-ledger findings with fresh-context branch-owned fix agents, verifies fixes, and drafts evidence-backed replies without posting them. Use when the user selects finding IDs from multi-review for one PR or a stacked PR set.
 ---
 
 # Fix And Verify
 
-Executes triaged actions. Reviewer agents and fix agents must stay separate.
+Executes selected review actions. Reviewer agents and fix agents must stay separate.
 
 ## Process
 
-1. Read the triage action table and review ledger.
-2. Batch compatible `fix` items by owner branch.
-3. Assign one fresh-context fix agent per branch batch.
-4. Fix parent branches before child branches.
-5. Run branch-relevant checks after edits.
-6. Commit and push verified code changes.
-7. Append fix evidence to the review ledger.
-8. Draft replies for `reply-only`, `false-positive`, `acceptable-tradeoff`, and fixed items when useful.
+1. Read the review ledger and the user's explicit list of selected finding IDs.
+2. Confirm every selected ID exists and read its judgement, owner branch, trade-off, and next action. Stop on a missing or ambiguous ID.
+3. Batch selected `fix` items by owner branch.
+4. Assign one fresh-context fix agent per branch batch.
+5. Fix parent branches before child branches.
+6. Run branch-relevant checks after edits.
+7. Commit and push verified code changes.
+8. Append fix evidence to the selected ledger findings.
+9. Draft replies for selected `reply-only`, `false-positive`, `acceptable-tradeoff`, and fixed items when useful.
 
 ## Stack rules
 
@@ -52,6 +53,7 @@ Use the strongest practical checks for the changed branch: tests, type checks, l
 - branches changed
 - commits and pushed branches
 - items fixed
+- selected finding IDs and any selected items that required no code change
 - checks run with outputs
 - reply drafts with target comment IDs when available
 - whether code changed and `multi-review` must rerun
@@ -62,3 +64,4 @@ Use the strongest practical checks for the changed branch: tests, type checks, l
 - Do not update PR descriptions.
 - Do not resolve threads.
 - Do not claim fixed without fresh verification evidence.
+- Do not act on an open finding unless the user selected its ID.
