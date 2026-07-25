@@ -42,4 +42,6 @@ Judgements:
 
 ## Handoff
 
-`code-writing` or `fix-and-verify` implements the decision. `review-docs-check` independently audits it later.
+`code-writing` or `fix-and-verify` implements the decision. When installed,
+`multi-review` can independently audit the resulting diff through its
+standalone documentation-conformance lane.

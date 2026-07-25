@@ -15,10 +15,8 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | `research-options` | Compare broad options before deciding |
 | `manage-agent-skills` | Create, update, install, remove, commit, or publish repo-owned custom skills |
 | `audit-agent-skills` | Explicit-only, read-only check of source ownership, content parity, and Claude symlinks |
-| `multi-review` | Run all fresh-context review lanes across a branch or stack |
-| `review-code-quality` | Review repo conventions, code readability, and maintainability smells |
-| `review-spec` | Review whether a diff matches the originating issue, PRD, ticket, or spec |
-| `fix-and-verify` | Apply explicitly selected review findings with branch-owned fresh-context fix agents |
+| `multi-review` | Run targeted or parallel full-diff review lanes across a branch or stack |
+| `fix-and-verify` | Implement explicitly selected issues and verify the chosen fix approach |
 | `capture-evidence` | Capture local command/browser/screenshot evidence into an OS-temp manifest |
 | `write-pr-description` | Create draft PRs or update PR descriptions, images, and evidence links |
 | `reply-github-comment` | Post verified GitHub replies only, never resolve threads |
@@ -39,17 +37,18 @@ build-context → grill-me | grill-with-docs
 ### Review and fix workflow
 
 ```text
-multi-review → user selects finding IDs → fix-and-verify → multi-review
+multi-review → user selects issues and approaches → fix-and-verify → optional multi-review
 ```
 
-`multi-review` runs every review lane for the full branch diff, deduplicates findings, and records decision-ready actions and trade-offs:
+`multi-review` contains six standalone lanes, runs applicable lanes in parallel
+for the full branch diff, and records decision-ready findings:
 
-- `review-docs-check`
-- `review-bug`
-- `review-security`
-- `review-code-quality`
-- `review-spec`
-- `review-pr-accuracy`
+- documentation conformance
+- bugs
+- security
+- code quality
+- spec conformance
+- PR accuracy
 
 Other skills may exist globally (`~/.agents/skills/`) but not yet in this repo — migrate here when you want them versioned.
 
@@ -74,7 +73,7 @@ Use **`add` from the local path**, not `update` — `update` pulls from GitHub a
 Refresh all repo skills:
 
 ```bash
-for s in build-context code-writing write-readable-english docs-check research-options manage-agent-skills audit-agent-skills interview-prep-design-r3 multi-review review-docs-check review-bug review-security review-code-quality review-spec review-pr-accuracy fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
+for s in build-context code-writing write-readable-english docs-check research-options manage-agent-skills audit-agent-skills interview-prep-design-r3 multi-review fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
   npx skills add ~/ai/agent-skills -s "$s" -g -y
 done
 ```
