@@ -9,7 +9,6 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | Skill | Use when |
 |-------|----------|
 | `build-context` | ≤300w brief from Slack/Notion/memory/codebase before grill |
-| `code-writing` | Document-shaped code with explicit contracts and readable structure |
 | `write-readable-english` | Writes and checks readable English at Grade 9 by default |
 | `docs-check` | Read-only documented-pattern check for framework/library/API/config/test/story changes |
 | `research-options` | Compare broad options before deciding |
@@ -73,7 +72,7 @@ Use **`add` from the local path**, not `update` — `update` pulls from GitHub a
 Refresh all repo skills:
 
 ```bash
-for s in build-context code-writing write-readable-english docs-check research-options manage-agent-skills audit-agent-skills interview-prep-design-r3 multi-review fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
+for s in build-context write-readable-english docs-check research-options manage-agent-skills audit-agent-skills interview-prep-design-r3 multi-review fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
   npx skills add ~/ai/agent-skills -s "$s" -g -y
 done
 ```

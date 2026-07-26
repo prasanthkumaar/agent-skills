@@ -29,7 +29,7 @@ Use this path when a framework, library, API, or config choice is broad enough t
 3. Validate the smallest practical proof for each viable option.
 4. Recommend the simplest fitting option.
 5. Include why it wins over the main alternative.
-6. Output any code comment rationale that `code-writing` should use if the chosen pattern is non-obvious.
+6. Output any code comment rationale that the implementing agent should use if the chosen pattern is non-obvious.
 
 ## Visual Option Loop
 
