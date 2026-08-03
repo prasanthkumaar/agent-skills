@@ -9,39 +9,59 @@ Use this database and data source:
 
 | Property | Type |
 |---|---|
-| `Breakdown item` | title |
-| `Overarching task` | rich text |
+| `Issue` | title |
+| `Parent issue` | relation to this data source |
+| `Sub-issues` | reciprocal relation to this data source |
+| `Overarching task` | formula: `if(empty(prop("Parent issue")), prop("Issue"), prop("Parent issue"))` |
 | `Work date` | date |
 | `Estimated cost (USD)` | number, US dollar format |
+| `Total cost (USD)` | rollup: sum of `Estimated cost (USD)` over `Sub-issues` |
 
 Stop before writing if the property names or types differ. Do not add properties
 or modify views.
+
+Parent issues represent natural, goal-led workstreams and persist across months.
+Their `Work date` and direct `Estimated cost (USD)` must remain blank. Each dated
+breakdown item is a subissue with exactly one `Parent issue`. Never write the
+formula or rollup fields directly: Notion calculates them from the hierarchy.
+`Total cost (USD)` on a parent is therefore its all-time child total, not a
+monthly total.
 
 ## Append workflow
 
 1. Finish collecting and grouping usage before making any Notion call. A Notion
    fallback invoked through `claude -p` becomes eligible for the next audit, not
    the snapshot currently being written.
-2. Query all existing rows for the audit month, following pagination.
-3. Represent every row with exactly the four required properties. Use the full
-   natural task-and-objective prose as the `Overarching task` rich-text value.
-4. Before creating a row, compare the exact tuple of breakdown item, overarching
-   task, work date, and unrounded cost with existing rows. Skip exact matches.
+2. Query all existing parents and all dated subissues for the audit month,
+   following pagination.
+3. Reuse the parent whose `Issue` exactly matches the full natural
+   task-and-objective prose. Create an undated, uncosted parent only when no exact
+   match exists. Reuse the same parent in later months.
+4. Represent each breakdown item as a child row with `Issue`, `Parent issue`,
+   `Work date`, and the unrounded `Estimated cost (USD)`. Do not write
+   `Overarching task`, `Sub-issues`, or `Total cost (USD)` directly.
+5. Before creating a child, compare the exact tuple of `Issue`, `Parent issue`,
+   `Work date`, and unrounded cost with existing children. Skip exact matches.
    This is the duplicate guard; there is no usage-ID property.
-5. Append unmatched rows only. Never update, delete, archive, or replace a row.
-6. Read the created rows back and verify every property exactly. Treat the write
-   as successful only when permission denials are empty and the read-back matches.
-7. Query all rows for the audit month again. Build the chat report only from this
-   query, not from the pre-write draft.
+6. Append missing parents and unmatched children only. Never update, delete,
+   archive, or replace a row outside the explicit corrections workflow.
+7. Read the created rows and affected parents back. Verify the child fields,
+   reciprocal relations, calculated overarching-task value, and parent rollup.
+   Treat the write as successful only when permission denials are empty and the
+   read-back matches.
+8. Query all dated child rows for the audit month again. Build the chat report
+   only from this query, grouping by parent. Sum `Estimated cost (USD)` on the
+   children and never add parent rollups, which would double-count usage.
 
 ## Corrections
 
 When the user explicitly asks to correct an existing audit after supplying a new
-authoritative Claude total, update the matching current-month rows in place. Keep
-their titles, task values, and dates unchanged. Replace only their unrounded costs
-using the collector's reconciled prompt weights. Do not append revised duplicates.
-Read every corrected row back and require the month sum to equal the authoritative
-total before reporting success.
+authoritative Claude total, update the matching current-month subissues in place.
+Keep their `Issue`, `Parent issue`, and dates unchanged. Replace only their
+unrounded costs using the collector's reconciled prompt weights. Do not append
+revised duplicates. Read every corrected child and affected parent back, then
+require the sum of that month's child costs to equal the authoritative total
+before reporting success.
 
 Use direct Notion tools when available. If they are unavailable, use a scoped
 `claude -p` call after collection with `--permission-mode dontAsk`, JSON output,
