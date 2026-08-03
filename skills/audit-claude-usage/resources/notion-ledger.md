@@ -10,13 +10,12 @@ Use this database and data source:
 | Property | Type |
 |---|---|
 | `Breakdown item` | title |
-| `Overarching task` | select |
+| `Overarching task` | rich text |
 | `Work date` | date |
 | `Estimated cost (USD)` | number, US dollar format |
 
 Stop before writing if the property names or types differ. Do not add properties
-or modify views. Adding a new option to the existing `Overarching task` select is
-allowed when a newly inferred workstream needs it.
+or modify views.
 
 ## Append workflow
 
@@ -25,18 +24,14 @@ allowed when a newly inferred workstream needs it.
    the snapshot currently being written.
 2. Query all existing rows for the audit month, following pagination.
 3. Represent every row with exactly the four required properties. Use the full
-   natural task-and-objective prose as the `Overarching task` select value.
-   Notion rejects commas in select option names, so rewrite any such label with a
-   natural conjunction or preposition without changing its meaning.
-4. Ensure each required `Overarching task` value exists as a select option. Add
-   only missing options and preserve all existing properties, options, and views.
-5. Before creating a row, compare the exact tuple of breakdown item, overarching
+   natural task-and-objective prose as the `Overarching task` rich-text value.
+4. Before creating a row, compare the exact tuple of breakdown item, overarching
    task, work date, and unrounded cost with existing rows. Skip exact matches.
    This is the duplicate guard; there is no usage-ID property.
-6. Append unmatched rows only. Never update, delete, archive, or replace a row.
-7. Read the created rows back and verify every property exactly. Treat the write
+5. Append unmatched rows only. Never update, delete, archive, or replace a row.
+6. Read the created rows back and verify every property exactly. Treat the write
    as successful only when permission denials are empty and the read-back matches.
-8. Query all rows for the audit month again. Build the chat report only from this
+7. Query all rows for the audit month again. Build the chat report only from this
    query, not from the pre-write draft.
 
 ## Corrections
@@ -51,5 +46,4 @@ total before reporting success.
 Use direct Notion tools when available. If they are unavailable, use a scoped
 `claude -p` call after collection with `--permission-mode dontAsk`, JSON output,
 and exact allow-listing for only the required Notion query, create, and fetch
-tools. Include the data-source update tool only when adding missing select
-options. Never use a broad permission bypass.
+tools. Never use a broad permission bypass.
