@@ -18,6 +18,12 @@ Use this database and data source:
 | `Total cost (USD)` | helper rollup: sum of `Raw cost` over `Sub-item`; property ID `QjxAQQ` |
 | `Estimated cost (USD)` | formula: `if(empty(prop("Sub-item")), prop("Raw cost"), prop("Total cost (USD)"))`; property ID `T3BeVg` |
 
+The helper rollup must resolve to relation property `Sub-item` (`bkFpSg`),
+target property `Raw cost` (`Q19lVQ`), and aggregation `sum`. Read the schema
+back after every change and compare all three fields. A matching property name
+alone is insufficient because reversing the native relation sides leaves parent
+totals at zero.
+
 `Parent item` and `Sub-item` must be the database's native sub-item properties,
 not an ordinary self-relation pair with similar names. Stop before writing if
 the property names, IDs, or types differ. Ask the user to enable native sub-items
@@ -51,10 +57,23 @@ shows a sub-item's raw cost or a parent's all-time child total.
 6. Append missing parents and unmatched children only. Never update, delete,
    archive, or replace a row outside the explicit corrections workflow.
 7. Read the created rows and affected parents back. Verify the child fields,
-   reciprocal relations, calculated overarching-task value, helper rollup, and
-   displayed estimated cost. Treat the write as successful only when permission
-   denials are empty and the read-back matches.
-8. Query all dated child rows for the audit month again. Build the chat report
+   reciprocal relations, calculated overarching-task reference, exact helper
+   rollup schema, formula expression, and raw child-cost sum. Treat the write as
+   successful only when permission denials are empty and the available read-back
+   matches.
+8. Notion connector reads may return computed properties as `<omitted />` or
+   `formulaResult://...` references that the fetch tool cannot resolve. Never
+   infer a rendered parent value from its children and call it verified. Report
+   that the rendered calculation was not verified unless a supported tool
+   returns the actual numeric value. If the user asks for UI verification, use
+   the browser surface they request or ask them to refresh and confirm the
+   visible cells.
+9. Never run `ALTER COLUMN "Estimated cost (USD)" SET NUMBER FORMAT ...` through
+   `notion-update-data-source`. The current connector converts the formula into
+   a plain number property. Preserve the formula type and expression; treat
+   currency display formatting as a separate manual/UI concern when the
+   connector cannot update it safely.
+10. Query all dated child rows for the audit month again. Build the chat report
    only from this query, grouping by parent. Sum `Raw cost` on the children and
    never sum `Estimated cost (USD)` across mixed parent and child rows, which
    would double-count usage.
@@ -67,7 +86,8 @@ Keep their `Issue`, `Parent item`, and dates unchanged. Replace only their
 unrounded `Raw cost` values using the collector's reconciled prompt weights. Do
 not append revised duplicates. Read every corrected child and affected parent
 back, then require the sum of that month's child raw costs to equal the
-authoritative total before reporting success.
+authoritative total before reporting success. Do not substitute this arithmetic
+check for rendered formula or rollup verification.
 
 Use direct Notion tools when available. If they are unavailable, use a scoped
 `claude -p` call after collection with `--permission-mode dontAsk`, JSON output,
