@@ -14,7 +14,7 @@ Turn the current month's local Claude transcripts into a concise, outcome-level 
 2. Obtain the current-month estimated API-equivalent total displayed by Claude.
    If it is unavailable programmatically or supplied by the user, ask for it;
    never substitute a locally reconstructed total silently.
-3. Run `node scripts/collect-usage.mjs --authoritative-total-usd <amount>
+3. Run `sh scripts/collect-usage.sh --authoritative-total-usd <amount>
    --timezone Asia/Singapore`. Replace the timezone only when the user requests
    another one.
 4. Treat the collector output as the evidence ledger. It includes Claude Code,

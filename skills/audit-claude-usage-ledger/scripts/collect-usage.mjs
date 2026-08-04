@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 const args = process.argv.slice(2);
+const CCUSAGE_VERSION = '20.0.19';
 
 function argument(name) {
   const index = args.indexOf(name);
@@ -40,9 +41,9 @@ function run(command, commandArgs) {
 }
 
 function ccusage(commandArgs) {
-  // Current pricing is required because Claude's transcript format stores token
-  // usage but may not store the locally estimated historical session cost.
-  return run('npx', ['--yes', 'ccusage@latest', ...commandArgs]);
+  // Keep the cost reconstruction reproducible. Upgrade this exact version only
+  // after reviewing and testing the corresponding ccusage release.
+  return run('npx', ['--yes', `ccusage@${CCUSAGE_VERSION}`, ...commandArgs]);
 }
 
 function messageText(message) {
@@ -245,8 +246,9 @@ process.stdout.write(`${JSON.stringify({
   month,
   timeZone,
   currency: 'USD',
+  ccusageVersion: CCUSAGE_VERSION,
   costBasis: authoritativeMonthCostUSD === undefined
-    ? 'Locally estimated API-equivalent cost via current ccusage pricing'
+    ? `Locally estimated API-equivalent cost via ccusage ${CCUSAGE_VERSION} pricing`
     : 'Claude-displayed API-equivalent total distributed using local transcript cost weights',
   attribution: `Estimated cost is assigned to the ${timeZone} date of the initiating human prompt.`,
   localEstimatedMonthCostUSD,
