@@ -39,9 +39,10 @@ Turn local Claude transcripts into a compact, outcome-level monthly cost audit.
 9. Query the database after writing and reconstruct the current month's report
    from its dated native sub-items. Group by their calculated `Overarching task`,
    then `Work date`, and sum unrounded child `Raw cost` values before formatting
-   them. Do not treat schema metadata or child-cost arithmetic as proof that
-   Notion rendered a computed parent value; follow the connector limitation and
-   verification rules in the ledger resource.
+   them. Do not treat connector schema metadata or child-cost arithmetic as
+   proof that Notion rendered a computed parent value. When repairing the schema
+   or verifying rendered totals, follow the live-UI checks in the ledger
+   resource.
 10. Return the reconstructed Markdown report in chat. Do not create a report file.
 
 ## Output format

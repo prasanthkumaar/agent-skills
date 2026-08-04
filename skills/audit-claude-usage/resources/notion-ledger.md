@@ -19,10 +19,12 @@ Use this database and data source:
 | `Estimated cost (USD)` | formula: `if(empty(prop("Sub-item")), prop("Raw cost"), prop("Total cost (USD)"))`; property ID `T3BeVg` |
 
 The helper rollup must resolve to relation property `Sub-item` (`bkFpSg`),
-target property `Raw cost` (`Q19lVQ`), and aggregation `sum`. Read the schema
-back after every change and compare all three fields. A matching property name
-alone is insufficient because reversing the native relation sides leaves parent
-totals at zero.
+target property `Raw cost` (`Q19lVQ`), and aggregation `sum`. A matching property
+name alone is insufficient because reversing the native relation sides leaves
+parent totals at zero. Connector schema read-back can misreport which side of a
+native sub-item relation the rollup uses. When configuring or repairing this
+property, inspect the live Notion UI and confirm `Sub-item` -> `Raw cost` ->
+`Sum`. Treat the rendered UI as authoritative for this setting.
 
 `Parent item` and `Sub-item` must be the database's native sub-item properties,
 not an ordinary self-relation pair with similar names. Stop before writing if
@@ -57,17 +59,19 @@ shows a sub-item's raw cost or a parent's all-time child total.
 6. Append missing parents and unmatched children only. Never update, delete,
    archive, or replace a row outside the explicit corrections workflow.
 7. Read the created rows and affected parents back. Verify the child fields,
-   reciprocal relations, calculated overarching-task reference, exact helper
-   rollup schema, formula expression, and raw child-cost sum. Treat the write as
-   successful only when permission denials are empty and the available read-back
-   matches.
+   reciprocal relations, calculated overarching-task reference, formula
+   expression, and raw child-cost sum. Treat the write as successful only when
+   permission denials are empty and the available read-back matches. For a
+   schema repair, also inspect the live Notion property editor and confirm the
+   helper rollup is `Sub-item` -> `Raw cost` -> `Sum`.
 8. Notion connector reads may return computed properties as `<omitted />` or
    `formulaResult://...` references that the fetch tool cannot resolve. Never
    infer a rendered parent value from its children and call it verified. Report
-   that the rendered calculation was not verified unless a supported tool
-   returns the actual numeric value. If the user asks for UI verification, use
-   the browser surface they request or ask them to refresh and confirm the
-   visible cells.
+   that the rendered calculation was not verified unless a supported tool or
+   the Notion desktop UI returns the actual numeric value. For UI verification,
+   refresh Notion, confirm each affected parent shows the expected total, and
+   confirm the `Estimated cost (USD)` footer equals the authoritative monthly
+   total.
 9. Never run `ALTER COLUMN "Estimated cost (USD)" SET NUMBER FORMAT ...` through
    `notion-update-data-source`. The current connector converts the formula into
    a plain number property. Preserve the formula type and expression; treat
