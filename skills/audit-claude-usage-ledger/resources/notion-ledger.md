@@ -1,0 +1,128 @@
+# Notion ledger
+
+Use this database and data source:
+
+- Database: `https://app.notion.com/p/opengov/3b177dbba7888089a4b4caa2ff327388?v=3b177dbba78880fc80a0000c10e827f8&source=copy_link`
+- Data source: `collection://3b177dbb-a788-8036-9d79-000ba56a24fe`
+
+## Core schema
+
+| Property | Type |
+|---|---|
+| `Issue` | title |
+| `Parent item` | native sub-item parent relation to this data source; property ID `XWBdaA` |
+| `Sub-item` | native reciprocal sub-item relation; property ID `bkFpSg` |
+| `Work date` | date |
+| `Raw cost` | number, US dollar format; editable on dated sub-items only; property ID `Q19lVQ` |
+| `Estimated cost (USD)` | formula displaying a child's `Raw cost` or the sum of a parent's child `Raw cost` values; property ID `T3BeVg` |
+
+Prefer this direct formula for `Estimated cost (USD)`:
+
+```notion
+if(
+  empty(prop("Sub-item")),
+  prop("Raw cost"),
+  prop("Sub-item").map(current.prop("Raw cost")).sum()
+)
+```
+
+This uses the native `Sub-item` relation directly, so a separate helper rollup
+is unnecessary. Treat the rendered UI as authoritative for the result.
+
+## Optional legacy properties
+
+The database may still contain these properties from the earlier schema. Ignore
+them when reading or writing new audit rows:
+
+| Property | Purpose | Safe removal |
+|---|---|---|
+| `Overarching task` | Repeated the native parent title for grouping. | Yes. Group by `Parent item` instead. |
+| `Status` | Default task status; the audit does not use workflow state. | Yes, or hide it if Notion requires it for a task-database view. |
+| `Total cost (USD)` | Helper rollup used by the legacy `Estimated cost (USD)` formula. | Only after changing `Estimated cost (USD)` to the direct formula above and verifying totals. |
+
+The legacy formula `if(empty(prop("Sub-item")), prop("Raw cost"),
+prop("Total cost (USD)"))` remains supported while `Total cost (USD)` exists.
+Never delete `Total cost (USD)` while that formula still references it.
+
+`Parent item` and `Sub-item` must be the database's native sub-item properties,
+not an ordinary self-relation pair with similar names. Stop before writing if
+the property names, IDs, or types differ. Ask the user to enable native sub-items
+when these properties are missing. Never create substitute relation properties,
+add schema properties, or modify views.
+
+Parent issues represent natural, goal-led workstreams and persist across months.
+Their `Work date` and `Raw cost` must remain blank. Each dated breakdown item is
+a native sub-item with exactly one `Parent item` and an editable `Raw cost`. Set
+only the child's `Parent item`; let Notion populate the reciprocal `Sub-item`
+relation. Never write `Estimated cost (USD)` directly. Notion calculates it from
+the hierarchy. The visible value shows a sub-item's raw cost or a parent's
+all-time child total.
+
+## Simplifying the live database
+
+When the user asks to remove redundant properties:
+
+1. Change `Estimated cost (USD)` to the direct formula above.
+2. Refresh Notion and verify every affected parent total and the database footer.
+3. Delete `Total cost (USD)` only after that verification passes.
+4. Delete `Overarching task` and `Status`, or hide `Status` if Notion prevents
+   its deletion because the database is configured as a task database.
+5. Refresh again and repeat the rendered parent-total and footer checks.
+
+## Append workflow
+
+1. Finish collecting and grouping usage before making any Notion call. A Notion
+   fallback invoked through `claude -p` becomes eligible for the next audit, not
+   the snapshot currently being written.
+2. Query all existing parents and all dated sub-items for the audit month,
+   following pagination.
+3. Reuse the parent whose `Issue` exactly matches the full natural
+   task-and-objective prose. Create an undated, uncosted parent only when no exact
+   match exists. Reuse the same parent in later months.
+4. Represent each breakdown item as a child row with `Issue`, `Parent item`,
+   `Work date`, and the unrounded `Raw cost`. Do not write `Sub-item`,
+   `Estimated cost (USD)`, or any optional legacy property directly.
+5. Before creating a child, compare the exact tuple of `Issue`, `Parent item`,
+   `Work date`, and unrounded `Raw cost` with existing children. Skip exact
+   matches. This is the duplicate guard; there is no usage-ID property.
+6. Append missing parents and unmatched children only. Never update, delete,
+   archive, or replace a row outside the explicit corrections workflow.
+7. Read the created rows and affected parents back. Verify the child fields,
+   reciprocal relations, parent reference, cost formula, and raw child-cost sum.
+   Treat the write as successful only when permission denials are empty and the
+   available read-back matches. For a schema repair, also inspect the live
+   Notion property editor and confirm the formula uses the intended native
+   `Sub-item` relation.
+8. Notion connector reads may return computed properties as `<omitted />` or
+   `formulaResult://...` references that the fetch tool cannot resolve. Never
+   infer a rendered parent value from its children and call it verified. Report
+   that the rendered calculation was not verified unless a supported tool or
+   the Notion desktop UI returns the actual numeric value. For UI verification,
+   refresh Notion, confirm each affected parent shows the expected total, and
+   confirm the `Estimated cost (USD)` footer equals the authoritative monthly
+   total.
+9. Never run `ALTER COLUMN "Estimated cost (USD)" SET NUMBER FORMAT ...` through
+   `notion-update-data-source`. The current connector converts the formula into
+   a plain number property. Preserve the formula type and expression; treat
+   currency display formatting as a separate manual/UI concern when the
+   connector cannot update it safely.
+10. Query all dated child rows for the audit month again. Build the chat report
+   only from this query, grouping by parent. Sum `Raw cost` on the children and
+   never sum `Estimated cost (USD)` across mixed parent and child rows, which
+   would double-count usage.
+
+## Corrections
+
+When the user explicitly asks to correct an existing audit after supplying a new
+authoritative Claude total, update the matching current-month sub-items in place.
+Keep their `Issue`, `Parent item`, and dates unchanged. Replace only their
+unrounded `Raw cost` values using the collector's reconciled prompt weights. Do
+not append revised duplicates. Read every corrected child and affected parent
+back, then require the sum of that month's child raw costs to equal the
+authoritative total before reporting success. Do not substitute this arithmetic
+check for rendered formula or rollup verification.
+
+Use direct Notion tools when available. If they are unavailable, use a scoped
+`claude -p` call after collection with `--permission-mode dontAsk`, JSON output,
+and exact allow-listing for only the required Notion query, create, and fetch
+tools. Never use a broad permission bypass.
