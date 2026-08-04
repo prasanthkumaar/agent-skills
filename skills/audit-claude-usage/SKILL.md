@@ -38,7 +38,8 @@ Turn local Claude transcripts into a compact, outcome-level monthly cost audit.
    Notion database without updating or deleting old rows.
 9. Query the database after writing and reconstruct the current month's report
    from its dated native sub-items. Group by their calculated `Overarching task`,
-   then `Work date`, and sum unrounded child costs before formatting them.
+   then `Work date`, and sum unrounded child `Raw cost` values before formatting
+   them.
 10. Return the reconstructed Markdown report in chat. Do not create a report file.
 
 ## Output format
