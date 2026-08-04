@@ -19,6 +19,8 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | `research-options` | Compare broad options before deciding |
 | `manage-agent-skills` | Create, update, install, remove, commit, or publish repo-owned custom skills |
 | `audit-agent-skills` | Read-only provenance and installation-integrity audit across repo, global installs, and Claude links |
+| `audit-claude-usage` | Concise chat-only monthly Claude usage and cost summary |
+| `audit-claude-usage-ledger` | Monthly Claude usage audit persisted to the Notion ledger with dated breakdowns |
 | `multi-review` | Run all fresh-context review lanes across a branch or stack |
 | `review-code-quality` | Review repo conventions, code readability, and maintainability smells |
 | `review-spec` | Review whether a diff matches the originating issue, PRD, ticket, or spec |
@@ -85,7 +87,7 @@ Use **`add` from the local path**, not `update` — `update` pulls from GitHub a
 Refresh all repo skills:
 
 ```bash
-for s in build-context to-plan build-pr ready-pr update-pr code-writing write-readable-english docs-check research-options manage-agent-skills audit-agent-skills interview-prep-design-r3 multi-review review-docs-check review-bug review-security review-code-quality review-spec review-pr-accuracy triage fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
+for s in build-context to-plan build-pr ready-pr update-pr code-writing write-readable-english docs-check research-options manage-agent-skills audit-agent-skills audit-claude-usage audit-claude-usage-ledger interview-prep-design-r3 multi-review review-docs-check review-bug review-security review-code-quality review-spec review-pr-accuracy triage fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
   npx skills add ~/ai/agent-skills -s "$s" -g -y
 done
 ```
