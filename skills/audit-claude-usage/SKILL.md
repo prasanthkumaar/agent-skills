@@ -30,15 +30,15 @@ Turn local Claude transcripts into a compact, outcome-level monthly cost audit.
    page titles, database titles, assistant text, and tool results.
 7. Write each substantial workstream as a natural, goal-led parent `Issue` that
    combines the task, objective, and appropriate project or team scope. Write
-   each dated breakdown item as its subissue. Put all other cost-bearing activity
-   under the `Miscellaneous Claude usage` parent, with each unique activity kept
-   as its own subissue.
+   each dated breakdown item as its native Notion sub-item. Put all other
+   cost-bearing activity under the `Miscellaneous Claude usage` parent, with each
+   unique activity kept as its own native sub-item.
 8. Read [resources/notion-ledger.md](resources/notion-ledger.md). Reuse existing
-   parents and append missing parents and new subissues to the configured Notion
-   database without updating or deleting old rows.
+   parents and append missing parents and new native sub-items to the configured
+   Notion database without updating or deleting old rows.
 9. Query the database after writing and reconstruct the current month's report
-   from its dated subissues. Group by their calculated `Overarching task`, then
-   `Work date`, and sum unrounded child costs before formatting them.
+   from its dated native sub-items. Group by their calculated `Overarching task`,
+   then `Work date`, and sum unrounded child costs before formatting them.
 10. Return the reconstructed Markdown report in chat. Do not create a report file.
 
 ## Output format
