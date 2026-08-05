@@ -9,7 +9,7 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | Skill | Use when |
 |-------|----------|
 | `build-context` | ≤300w brief from Slack/Notion/memory/codebase before grill |
-| `write-readable-english` | Makes the smallest useful edit for clarity while preserving meaning and avoiding oversimplification; [guide](docs/guides/write-readable-english.md) |
+| `write-readable-english` | Makes the smallest useful edit for clarity while preserving meaning and avoiding oversimplification |
 | `docs-check` | Read-only documented-pattern check for framework/library/API/config/test/story changes |
 | `research-options` | Compare broad options before deciding |
 | `manage-agent-skills` | Create, update, install, remove, commit, or publish repo-owned custom skills |
