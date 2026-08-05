@@ -1,6 +1,7 @@
 ---
 name: update-weekly-snippets
 description: Reconstructs Prasanth's weekly work, checks material claims against Slack or Notion, drafts it in his Slack voice, and posts only after approval. Use when preparing or posting a weekly update in the Designer Snippets thread.
+disable-model-invocation: true
 ---
 
 # Update Weekly Snippets
