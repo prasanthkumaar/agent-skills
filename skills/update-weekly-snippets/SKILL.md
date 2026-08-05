@@ -11,8 +11,8 @@ Create a concise, evidence-backed weekly update.
 
 1. Use Monday through today in `Asia/Singapore`, unless the user gives another
    range.
-2. Find candidate work in Cursor, Claude, and Codex transcripts. Search by date,
-   project, and outcome.
+2. Use Mempalace to find candidate work across Cursor, Claude, and Codex
+   transcripts. Search by date, project, and outcome.
 3. Check material outcomes against direct Slack or Notion evidence. Keep the
    supporting permalink or page URL. Omit unsupported claims and soften claims
    that the source supports only in part.
