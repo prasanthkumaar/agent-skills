@@ -33,17 +33,10 @@ Create a concise, evidence-backed weekly update.
 Omit a week-number heading unless requested. Include small maintenance work only
 when it materially affected the team.
 
-## Company access
-
-- Use policy-compliant, non-interactive `claude -p` calls with `ToolSearch` and
-  exact allowlisted MCP tools. Discover tool names first when needed.
-- Keep discovery and validation read-only. Accept results only when the command
-  succeeds without permission denials and returns source evidence.
-- Stop on repeated denial, authentication failure, or missing evidence. Never
-  switch to Chrome, an interactive session, or bypass permissions.
-
 ## Hard rules
 
+- Keep discovery and validation read-only. Do not post, edit, react, or create
+  content during those steps.
 - Transcripts suggest candidates; they do not prove outcomes.
 - Do not claim `announced`, `shipped`, `published`, or `reviewed` without direct
   evidence of that state.
