@@ -1,6 +1,7 @@
 ---
 name: manage-agent-skills
-description: Manages custom skills whose source of truth is ~/ai/agent-skills. Use when creating, updating, installing, removing, committing, or publishing a repo-owned skill through npx skills.
+description: Manages custom skills whose source of truth is ~/ai/agent-skills. Explicit user invocation only for creating, updating, installing, removing, committing, or publishing a repo-owned skill through npx skills.
+disable-model-invocation: true
 ---
 
 # Manage Agent Skills
@@ -12,7 +13,7 @@ Keep `~/ai/agent-skills/skills/<skill-name>/` as the source of truth. Installed 
 1. Confirm the requested skill name and operation: create, update, install, remove, or publish.
 2. Read `~/ai/agent-skills/README.md` and the target skill. For a new or rewritten prompt, load `write-a-skill`.
 3. Run `git -C ~/ai/agent-skills status --short`. Record unrelated changes and do not stage, alter, revert, or commit them.
-4. Define proof before changing anything: structural validation, source/install comparison, manager inventory, Claude link, and Git diff.
+4. Define proof before changing anything: structural validation and scoped Git diff before the draft PR; merge, source/install parity, manager inventory, and Claude link after merge.
 
 ## Create or update
 
@@ -24,26 +25,14 @@ python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
   ~/ai/agent-skills/skills/<skill-name>
 ```
 
-3. Install the named skill from the local working tree:
+Any failure is fatal unless its complete output is exactly `Unexpected key(s) in SKILL.md frontmatter: disable-model-invocation. Allowed properties are: allowed-tools, description, license, metadata, name`. For only that known schema-lag failure, validate both invocation guards:
 
 ```bash
-npx skills add ~/ai/agent-skills \
-  -s <skill-name> \
-  -g \
-  --agent claude-code codex
+ruby -e 'require "yaml"; text = File.read(ARGV[0]); data = YAML.safe_load(text.split(/^---\s*$\n/)[1]); abort unless data["disable-model-invocation"] == true' ~/ai/agent-skills/skills/<skill-name>/SKILL.md
+ruby -e 'require "yaml"; data = YAML.safe_load(File.read(ARGV[0])); abort unless data.dig("policy", "allow_implicit_invocation") == false' ~/ai/agent-skills/skills/<skill-name>/agents/openai.yaml
 ```
 
-Use `-y` only when unattended prompt acceptance is intentional. Never run an untargeted add.
-
-4. Verify the derived installation:
-
-```bash
-diff -qr ~/ai/agent-skills/skills/<skill-name> ~/.agents/skills/<skill-name>
-realpath ~/.claude/skills/<skill-name>
-npx skills list -g
-```
-
-The diff must be empty, the Claude path must resolve to `~/.agents/skills/<skill-name>`, and the global inventory must contain the skill.
+3. Do not install or refresh derived copies before the PR merges.
 
 ## Remove
 
@@ -62,9 +51,9 @@ npx skills remove <skill-name> -g
 
 4. Verify that the source, global installation, and Claude entry are absent and that the global inventory no longer lists the skill.
 
-## Publish
+## Publish as a draft PR
 
-Publish only after local verification and when the user has explicitly requested or approved a push.
+Publish only after validation and explicit user approval. A push is incomplete until its non-`main` branch has an open draft PR to `main`.
 
 ```bash
 git -C ~/ai/agent-skills diff --check
@@ -72,10 +61,28 @@ git -C ~/ai/agent-skills diff -- skills/<skill-name>
 git -C ~/ai/agent-skills add -- skills/<skill-name>
 git -C ~/ai/agent-skills diff --cached --check
 git -C ~/ai/agent-skills commit -m '<type>(<skill-name>): <summary>'
-git -C ~/ai/agent-skills push
+git -C ~/ai/agent-skills branch --show-current
+git -C ~/ai/agent-skills push -u origin HEAD
 ```
 
-Include explicitly requested index or documentation paths in the scoped diff and add commands. Inspect the staged diff before committing. Confirm the remote branch contains the new commit.
+Include explicitly requested index or documentation paths in the scoped diff and add commands. Inspect the staged diff before committing. Never publish directly from `main`.
+
+After every push, inspect the current branch with `gh pr view --json url,state,isDraft,headRefName,baseRefName`. If no PR exists, create one with `gh pr create --draft --base main --head <branch> --fill`. Reuse an existing open draft; never duplicate it or silently convert a ready PR back to draft. Confirm the remote commit and return the draft PR URL, then stop without installing.
+
+## Install after merge
+
+Continue only after the user says the draft PR was merged. Verify `gh pr view <PR> --json state,mergedAt,mergeCommit,url` reports `MERGED`, fetch `origin/main`, and confirm the published commit is its ancestor. Safely synchronise the source checkout to `origin/main`; never switch, reset, or overwrite unrelated work.
+
+Install only the named skill from the merged source, using `-y` only for intentional unattended acceptance:
+
+```bash
+npx skills add ~/ai/agent-skills -s <skill-name> -g --agent claude-code codex
+diff -qr ~/ai/agent-skills/skills/<skill-name> ~/.agents/skills/<skill-name>
+realpath ~/.claude/skills/<skill-name>
+npx skills list -g
+```
+
+Require an empty diff, a Claude path resolving to `~/.agents/skills/<skill-name>`, and an inventory entry for the skill.
 
 ## Hard rules
 
@@ -84,8 +91,9 @@ Include explicitly requested index or documentation paths in the scoped diff and
 - Never run `npx skills check` as an audit or help probe; it may update installations.
 - Never create project-local `.agents/skills` while performing a global install.
 - Never stage, commit, or push unrelated dirty work.
-- Stop on validation, install, comparison, link, inventory, commit, or push failure and report the exact evidence.
+- Never install an unmerged skill or report a push as published before verifying its draft PR.
+- Stop on validation, commit, push, draft-PR, merge, install, comparison, link, or inventory failure and report the exact evidence.
 
 ## Report
 
-Return the operation, changed source paths, validation result, installation or removal proof, commit SHA, and remote branch. End with `Verified by: <evidence>`.
+Before merge, return the changed paths, validation result, commit SHA, remote branch, draft PR URL, and `installation deferred until merge`. After merge, add merge and installation proof. End with `Verified by: <evidence>`.
