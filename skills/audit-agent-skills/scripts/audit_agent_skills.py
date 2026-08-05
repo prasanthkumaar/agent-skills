@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit repo-owned skill installs and Claude links without changing them."""
+"""Audit skill ownership, installed content, and Claude links without mutation."""
 
 from __future__ import annotations
 
@@ -8,19 +8,33 @@ import hashlib
 import json
 import os
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
 
 HEALTHY = "healthy"
-INTEGRITY_FAILURES = {
+WARNING_ISSUES = {"not-installed"}
+FAILURE_ISSUES = {
     "missing-install",
-    "divergent",
+    "content-drift",
     "missing-claude-link",
     "loose-claude",
     "dangling",
-    "unknown-source",
+    "wrong-claude-link",
+    "loose",
+    "claude-only",
+}
+ISSUE_LABELS = {
+    "missing-install": "MISSING INSTALL",
+    "content-drift": "CONTENT DRIFT",
+    "missing-claude-link": "MISSING CLAUDE LINK",
+    "loose-claude": "LOOSE CLAUDE ENTRY",
+    "dangling": "DANGLING CLAUDE LINK",
+    "wrong-claude-link": "WRONG CLAUDE LINK",
+    "loose": "LOOSE",
+    "claude-only": "CLAUDE ONLY",
+    "not-installed": "NOT INSTALLED",
 }
 
 
@@ -34,31 +48,37 @@ def main() -> int:
     else:
         print_text_report(report)
 
-    return 1 if has_integrity_failures(report) else 0
+    return 1 if report["summary"]["failures"] else 0
 
 
 def parse_args() -> argparse.Namespace:
     home = Path.home()
     parser = argparse.ArgumentParser(
-        description="Read-only audit of repo-owned agent skills and Claude links."
+        description="Read-only audit of agent skill installation integrity."
     )
     parser.add_argument(
         "--repo-root",
         type=Path,
         default=home / "ai" / "agent-skills",
-        help="Repository root containing skills/ (default: ~/ai/agent-skills)",
+        help="Personal skill repository (default: ~/ai/agent-skills)",
     )
     parser.add_argument(
         "--agents-dir",
         type=Path,
         default=home / ".agents" / "skills",
-        help="Global managed skill directory (default: ~/.agents/skills)",
+        help="Installed skills directory (default: ~/.agents/skills)",
     )
     parser.add_argument(
         "--claude-dir",
         type=Path,
         default=home / ".claude" / "skills",
-        help="Claude skill link directory (default: ~/.claude/skills)",
+        help="Claude skill directory (default: ~/.claude/skills)",
+    )
+    parser.add_argument(
+        "--lock-file",
+        type=Path,
+        default=home / ".agents" / ".skill-lock.json",
+        help="External source metadata (default: ~/.agents/.skill-lock.json)",
     )
     parser.add_argument("--json", action="store_true", help="Emit deterministic JSON")
     return parser.parse_args()
@@ -69,69 +89,76 @@ def resolve_paths(args: argparse.Namespace) -> dict[str, Path]:
         "repo_skills": args.repo_root.expanduser().resolve() / "skills",
         "agents": args.agents_dir.expanduser().resolve(),
         "claude": args.claude_dir.expanduser().resolve(),
+        "lock": args.lock_file.expanduser().resolve(),
     }
     if not paths["repo_skills"].is_dir():
-        raise SystemExit(f"Repo skills directory does not exist: {paths['repo_skills']}")
+        raise ValueError(
+            f"Personal skill directory does not exist: {paths['repo_skills']}"
+        )
     return paths
 
 
 def audit(paths: dict[str, Path]) -> dict[str, Any]:
-    repo_skills = discover_skills(paths["repo_skills"], require_manifest=True)
+    personal_skills = discover_skills(paths["repo_skills"], require_manifest=True)
     installed_skills = discover_skills(paths["agents"], require_manifest=False)
+    external_sources = load_external_sources(paths["lock"])
 
     records = []
-    for name in sorted(repo_skills):
+    for name in sorted(personal_skills):
         records.append(
-            audit_repo_skill(
-                name,
-                repo_skills[name],
-                installed_skills.get(name),
-                paths["claude"] / name,
+            audit_personal_skill(
+                name=name,
+                source=personal_skills[name],
+                installed=installed_skills.get(name),
+                claude_entry=paths["claude"] / name,
             )
         )
 
-    for name in sorted(installed_skills.keys() - repo_skills.keys()):
-        link_state = claude_path_state(paths["claude"] / name, installed_skills[name])
-        issues = ["installed-only"]
-        if link_state["status"] != HEALTHY:
-            issues.append(link_state["status"])
+    external_names = external_sources.keys() - personal_skills.keys()
+    for name in sorted(external_names):
         records.append(
-            {
-                "name": name,
-                "ownership": "external",
-                "status": issues[0],
-                "issues": issues,
-                "content_status": "not-compared",
-                "source_path": None,
-                "installed_path": str(installed_skills[name]),
-                "claude_path": link_state,
-            }
+            audit_external_skill(
+                name=name,
+                source=external_sources[name],
+                installed=installed_skills.get(name),
+                claude_entry=paths["claude"] / name,
+                expected_install=paths["agents"] / name,
+            )
         )
 
-    records.extend(audit_claude_only(paths["claude"], repo_skills, installed_skills))
-    records.sort(key=lambda record: (record["name"], record["ownership"]))
-    counts = Counter(issue for record in records for issue in record["issues"])
+    unknown_installs = (
+        installed_skills.keys() - personal_skills.keys() - external_sources.keys()
+    )
+    for name in sorted(unknown_installs):
+        records.append(
+            audit_loose_skill(
+                name=name,
+                installed=installed_skills[name],
+                claude_entry=paths["claude"] / name,
+            )
+        )
 
+    known_names = personal_skills.keys() | external_sources.keys() | installed_skills.keys()
+    records.extend(
+        audit_claude_only(
+            claude_dir=paths["claude"],
+            known_names=known_names,
+        )
+    )
+    records.sort(key=record_sort_key)
+
+    severity_counts = Counter(record["severity"] for record in records)
+    issue_counts = Counter(issue for record in records for issue in record["issues"])
     return {
         "paths": {name: str(path) for name, path in sorted(paths.items())},
-        "provenance": {
-            "verified": False,
-            "limitation": (
-                "This audit compares current content and Claude link topology only; "
-                "it cannot prove installation history or that skills.sh created an entry."
-            ),
+        "summary": {
+            "healthy": severity_counts["healthy"],
+            "warnings": severity_counts["warning"],
+            "failures": severity_counts["failure"],
         },
-        "counts": dict(sorted(counts.items())),
+        "issue_counts": dict(sorted(issue_counts.items())),
         "skills": records,
     }
-
-
-def has_integrity_failures(report: dict[str, Any]) -> bool:
-    return any(
-        issue in INTEGRITY_FAILURES
-        for record in report["skills"]
-        for issue in record["issues"]
-    )
 
 
 def discover_skills(root: Path, require_manifest: bool) -> dict[str, Path]:
@@ -148,40 +175,191 @@ def discover_skills(root: Path, require_manifest: bool) -> dict[str, Path]:
     return skills
 
 
-def audit_repo_skill(
-    name: str, source: Path, installed: Path | None, claude_entry: Path
+def load_external_sources(lock_file: Path) -> dict[str, dict[str, str]]:
+    if not lock_file.is_file():
+        return {}
+
+    lock_data = json.loads(lock_file.read_text(encoding="utf-8"))
+    if not isinstance(lock_data, dict) or not isinstance(lock_data.get("skills"), dict):
+        raise ValueError(f"Invalid skill lock structure: {lock_file}")
+
+    sources = {}
+    for name, metadata in lock_data["skills"].items():
+        if not isinstance(name, str) or not isinstance(metadata, dict):
+            raise ValueError(f"Invalid skill record in lock: {lock_file}")
+        source = metadata.get("source")
+        if not isinstance(source, str) or not source.strip():
+            raise ValueError(f"Skill '{name}' has no source in lock: {lock_file}")
+        sources[name] = {
+            "source": source,
+            "source_url": string_or_empty(metadata.get("sourceUrl")),
+            "skill_path": string_or_empty(metadata.get("skillPath")),
+        }
+    return sources
+
+
+def audit_personal_skill(
+    name: str,
+    source: Path,
+    installed: Path | None,
+    claude_entry: Path,
 ) -> dict[str, Any]:
-    record: dict[str, Any] = {
-        "name": name,
-        "ownership": "repo",
-        "status": HEALTHY,
-        "issues": [],
-        "content_status": HEALTHY,
-        "source_path": str(source),
-        "installed_path": str(installed) if installed else None,
-        "claude_path": None,
-    }
-
+    issues = []
+    content_status = "matches"
     if installed is None:
-        record["content_status"] = "missing-install"
-        record["claude_path"] = claude_path_state(claude_entry, None)
-        record["issues"] = ["missing-install"]
-        if record["claude_path"]["status"] != HEALTHY:
-            record["issues"].append(record["claude_path"]["status"])
-        record["status"] = record["issues"][0]
-        return record
-
-    if tree_fingerprint(source) != tree_fingerprint(installed):
-        record["content_status"] = "divergent"
-        record["issues"].append("divergent")
+        content_status = "missing"
+        issues.append("missing-install")
+    elif tree_fingerprint(source) != tree_fingerprint(installed):
+        content_status = "drift"
+        issues.append("content-drift")
 
     link_state = claude_path_state(claude_entry, installed)
-    record["claude_path"] = link_state
+    append_link_issue(issues, link_state)
+    return make_record(
+        name=name,
+        source_group="Personal repository",
+        ownership="personal",
+        installed=installed,
+        content_status=content_status,
+        link_state=link_state,
+        issues=issues,
+        source_path=str(source),
+    )
+
+
+def audit_external_skill(
+    name: str,
+    source: dict[str, str],
+    installed: Path | None,
+    claude_entry: Path,
+    expected_install: Path,
+) -> dict[str, Any]:
+    issues = []
+    if installed is None:
+        issues.append("not-installed")
+
+    if (
+        installed is None
+        and not claude_entry.exists()
+        and not claude_entry.is_symlink()
+    ):
+        link_state = {
+            "path": str(claude_entry),
+            "status": "not-applicable",
+            "target": None,
+        }
+    else:
+        link_state = claude_path_state(
+            claude_entry,
+            installed if installed is not None else expected_install,
+        )
+        append_link_issue(issues, link_state)
+
+    return make_record(
+        name=name,
+        source_group=source["source"],
+        ownership="external",
+        installed=installed,
+        content_status="not-compared",
+        link_state=link_state,
+        issues=issues,
+        source_path=source["source_url"] or source["skill_path"] or None,
+    )
+
+
+def audit_loose_skill(
+    name: str,
+    installed: Path,
+    claude_entry: Path,
+) -> dict[str, Any]:
+    issues = ["loose"]
+    link_state = claude_path_state(claude_entry, installed)
+    append_link_issue(issues, link_state)
+    return make_record(
+        name=name,
+        source_group="Unknown source",
+        ownership="unknown",
+        installed=installed,
+        content_status="unknown",
+        link_state=link_state,
+        issues=issues,
+        source_path=None,
+    )
+
+
+def audit_claude_only(
+    claude_dir: Path,
+    known_names: set[str],
+) -> list[dict[str, Any]]:
+    if not claude_dir.is_dir():
+        return []
+
+    records = []
+    for entry in sorted(claude_dir.iterdir(), key=lambda path: path.name):
+        if entry.name in known_names:
+            continue
+        issues = ["claude-only"]
+        link_state = claude_path_state(entry, None)
+        append_link_issue(issues, link_state)
+        records.append(
+            make_record(
+                name=entry.name,
+                source_group="Claude only",
+                ownership="claude-only",
+                installed=None,
+                content_status="not-applicable",
+                link_state=link_state,
+                issues=issues,
+                source_path=None,
+            )
+        )
+    return records
+
+
+def make_record(
+    name: str,
+    source_group: str,
+    ownership: str,
+    installed: Path | None,
+    content_status: str,
+    link_state: dict[str, Any],
+    issues: list[str],
+    source_path: str | None,
+) -> dict[str, Any]:
+    severity = severity_for(issues)
+    return {
+        "name": name,
+        "source_group": source_group,
+        "ownership": ownership,
+        "installed": installed is not None,
+        "installed_path": str(installed) if installed is not None else None,
+        "content_status": content_status,
+        "claude_path": link_state,
+        "issues": issues,
+        "severity": severity,
+        "status": status_text(severity, issues),
+        "source_path": source_path,
+    }
+
+
+def severity_for(issues: list[str]) -> str:
+    if any(issue in FAILURE_ISSUES for issue in issues):
+        return "failure"
+    if any(issue in WARNING_ISSUES for issue in issues):
+        return "warning"
+    return "healthy"
+
+
+def status_text(severity: str, issues: list[str]) -> str:
+    if severity == "healthy":
+        return "HEALTHY"
+    labels = ", ".join(ISSUE_LABELS[issue] for issue in issues)
+    return f"{severity.upper()}: {labels}"
+
+
+def append_link_issue(issues: list[str], link_state: dict[str, Any]) -> None:
     if link_state["status"] != HEALTHY:
-        record["issues"].append(link_state["status"])
-    if record["issues"]:
-        record["status"] = record["issues"][0]
-    return record
+        issues.append(link_state["status"])
 
 
 def tree_fingerprint(root: Path) -> str:
@@ -222,8 +400,7 @@ def claude_path_state(entry: Path, expected_target: Path | None) -> dict[str, An
         state["status"] = "loose-claude"
         return state
 
-    raw_target = os.readlink(entry)
-    state["target"] = raw_target
+    state["target"] = os.readlink(entry)
     try:
         resolved_target = entry.resolve(strict=True)
     except FileNotFoundError:
@@ -232,64 +409,93 @@ def claude_path_state(entry: Path, expected_target: Path | None) -> dict[str, An
 
     state["resolved_target"] = str(resolved_target)
     if expected_target is None or resolved_target != expected_target.resolve():
-        state["status"] = "unknown-source"
+        state["status"] = "wrong-claude-link"
     return state
 
 
-def audit_claude_only(
-    claude_dir: Path,
-    repo_skills: dict[str, Path],
-    installed_skills: dict[str, Path],
-) -> list[dict[str, Any]]:
-    if not claude_dir.is_dir():
-        return []
+def record_sort_key(record: dict[str, Any]) -> tuple[int, str, str]:
+    source_group = record["source_group"]
+    if source_group == "Personal repository":
+        group_order = 0
+    elif source_group == "Unknown source":
+        group_order = 2
+    elif source_group == "Claude only":
+        group_order = 3
+    else:
+        group_order = 1
+    return group_order, source_group.casefold(), record["name"].casefold()
 
-    known_names = repo_skills.keys() | installed_skills.keys()
-    records = []
-    for entry in sorted(claude_dir.iterdir(), key=lambda path: path.name):
-        if entry.name in known_names:
-            continue
-        link_state = claude_path_state(entry, None)
-        records.append(
-            {
-                "name": entry.name,
-                "ownership": "claude-only",
-                "status": link_state["status"],
-                "issues": [link_state["status"]],
-                "content_status": "not-compared",
-                "source_path": None,
-                "installed_path": None,
-                "claude_path": link_state,
-            }
-        )
-    return records
+
+def string_or_empty(value: Any) -> str:
+    return value if isinstance(value, str) else ""
 
 
 def print_text_report(report: dict[str, Any]) -> None:
-    print("Agent skill audit")
-    for name, path in report["paths"].items():
-        print(f"{name}: {path}")
-    print(f"provenance: not verified ({report['provenance']['limitation']})")
+    print("Skill installation audit")
     print()
+    print("Summary")
+    print("| Status | Count |")
+    print("|---|---:|")
+    print(f"| Healthy | {report['summary']['healthy']} |")
+    print(f"| Warnings | {report['summary']['warnings']} |")
+    print(f"| Failures | {report['summary']['failures']} |")
 
+    grouped_records = defaultdict(list)
     for record in report["skills"]:
-        issues = ",".join(record["issues"]) or HEALTHY
-        claude_status = record["claude_path"]["status"]
-        print(
-            f"{record['ownership']:12} {record['name']}: "
-            f"content={record['content_status']} claude={claude_status} issues={issues}"
-        )
+        grouped_records[record["source_group"]].append(record)
+
+    for source_group, records in grouped_records.items():
+        print()
+        print(source_group)
+        print("| Skill | Installed | Claude link | Content | Status |")
+        print("|---|---|---|---|---|")
+        for record in records:
+            installed = "Yes" if record["installed"] else "No"
+            print(
+                f"| {record['name']} | {installed} | "
+                f"{record['claude_path']['status']} | "
+                f"{record['content_status']} | {record['status']} |"
+            )
+
+    failures = [record for record in report["skills"] if record["severity"] == "failure"]
+    if failures:
+        print()
+        print("Next actions")
+        for record in failures:
+            print(f"- {record['name']}: {next_action(record)}")
 
     print()
-    counts = " ".join(
-        f"{status}={count}" for status, count in report["counts"].items()
-    )
-    print(f"Counts: {counts or 'none'}")
+    result = "FAIL" if report["summary"]["failures"] else "PASS"
+    print(f"Result: {result}")
+
+
+def next_action(record: dict[str, Any]) -> str:
+    actions = []
+    issues = set(record["issues"])
+    if "claude-only" in issues:
+        return "remove the Claude-only entry or install and record its source"
+    if "missing-install" in issues:
+        actions.append("install the personal repository copy")
+    if "content-drift" in issues:
+        actions.append("reinstall from the personal repository")
+    if "loose" in issues:
+        actions.append("record its external source or remove the installed skill")
+    if issues & {
+        "missing-claude-link",
+        "loose-claude",
+        "dangling",
+        "wrong-claude-link",
+    }:
+        if record["installed"]:
+            actions.append("replace the Claude entry with a symlink to the installed skill")
+        else:
+            actions.append("remove the Claude entry or install the skill before linking it")
+    return "; ".join(actions)
 
 
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except OSError as error:
+    except (OSError, ValueError) as error:
         print(f"Audit failed: {error}", file=sys.stderr)
         sys.exit(2)

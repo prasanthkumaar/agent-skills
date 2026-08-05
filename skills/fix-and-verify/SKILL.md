@@ -1,64 +1,61 @@
 ---
 name: fix-and-verify
-description: Applies triaged fixes with fresh-context branch-owned fix agents, verifies the fixes, and drafts evidence-backed replies without posting them. Use after triage has produced fix or reply-only items for one PR or a stacked PR set.
+description: Implements explicitly selected code issues using the requested fix approach, then runs relevant verification. Use when the user supplies issues to fix and how to address them, with an optional review ledger to update.
 ---
 
 # Fix And Verify
 
-Executes triaged actions. Reviewer agents and fix agents must stay separate.
+Fixes only the issues the user selected. It works without `multi-review` or any
+review ledger.
+
+## Inputs
+
+Required:
+
+- repository and branch when not already clear
+- issue and location
+- chosen fix approach
+
+Optional:
+
+- review ledger path
+- explicit finding ID for each selected issue
+
+Direct instructions define the work. A ledger supplies context and receives
+status updates, but never expands the requested scope.
 
 ## Process
 
-1. Read the triage action table and review ledger.
-2. Batch compatible `fix` items by owner branch.
-3. Assign one fresh-context fix agent per branch batch.
-4. Fix parent branches before child branches.
-5. Run branch-relevant checks after edits.
-6. Commit and push verified code changes.
-7. Append fix evidence to the review ledger.
-8. Draft replies for `reply-only`, `false-positive`, `acceptable-tradeoff`, and fixed items when useful.
+1. Confirm every requested issue and chosen approach is concrete.
+2. If one mechanical fix is clear, proceed without asking for redundant
+   detail.
+3. Ask when the missing choice would materially affect behaviour,
+   architecture, security, data, or scope.
+4. Batch issues by their owner branch when working on a stack.
+5. Assign a fresh-context fix agent to each branch batch when useful.
+6. Fix parent branches before child branches.
+7. Implement only the selected issues.
+8. Run the strongest practical checks for the changed code.
+9. Report changed files, issues fixed, and verification evidence.
 
-## Stack rules
+## Optional ledger update
 
-- If a child branch exposes a parent issue, stop child work and fix the parent first.
-- After parent changes, restack or rebase children upward before continuing.
-- Do not edit across branch ownership unless the orchestrator assigns it.
+When a ledger and explicit finding IDs are provided:
+
+- Treat the direct issue and chosen approach as the source of truth.
+- Never act on extra ledger findings.
+- Set a selected finding to `fixed` only after relevant checks pass.
+- Never match findings by similar text.
+- If the ledger is missing, malformed, or incompatible, continue the fix,
+  skip the update, and report why.
 
 ## Commit and push
 
-Commit only after branch-relevant checks pass.
-
-For a single branch:
-
-1. Commit the verified changes with a clear conventional commit message.
-2. Push the branch.
-
-For a stack:
-
-1. Commit on the owner branch where the fix belongs.
-2. Work upward from the parent branch to children.
-3. If Graphite is installed and the repo uses it, use the Graphite CLI to restack and submit the stack.
-4. If Graphite is not available for the repo, restack with Git and push changed stacked branches with `--force-with-lease`.
-5. Never use bare `--force`.
-
-If no code changed, do not push just to post replies or update descriptions.
-
-## Verification
-
-Use the strongest practical checks for the changed branch: tests, type checks, lint, build, browser checks, Storybook checks, or direct command output.
-
-## Output
-
-- branches changed
-- commits and pushed branches
-- items fixed
-- checks run with outputs
-- reply drafts with target comment IDs when available
-- whether code changed and `multi-review` must rerun
+Do not commit or push unless the user explicitly asks. Never use bare
+`--force`.
 
 ## Hard rules
 
-- Do not post GitHub replies.
-- Do not update PR descriptions.
-- Do not resolve threads.
+- Do not post replies, update PR descriptions, or resolve threads.
 - Do not claim fixed without fresh verification evidence.
+- Do not change an unselected issue merely because it appears in a ledger.
