@@ -1,0 +1,5 @@
+interface:
+  display_name: "Manage Agent Skills"
+  short_description: "Manage repo-owned custom skills"
+policy:
+  allow_implicit_invocation: false
