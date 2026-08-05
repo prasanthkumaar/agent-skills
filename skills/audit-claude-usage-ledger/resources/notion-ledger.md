@@ -58,6 +58,24 @@ relation. Never write `Estimated cost (USD)` directly. Notion calculates it from
 the hierarchy. The visible value shows a sub-item's raw cost or a parent's
 all-time child total.
 
+## Cloud-only reconciliation row
+
+Use one persistent parent named exactly `Cloud-only usage (not attributable)`.
+Its `Work date` and `Raw cost` remain blank like every other parent. Under it,
+keep exactly one child per audit month:
+
+- `Issue`: `Usage not present in local transcripts for YYYY-MM`
+- `Parent item`: the cloud-only parent
+- `Work date`: the Settings `as of` date when shown, otherwise the invocation date
+- `Raw cost`: Claude Settings total minus `localEstimatedMonthCostUSD`
+
+This child is a monthly reconciliation snapshot, not an inferred work item. On a
+later audit of the same month, update this child in place with the latest date
+and unrounded cloud-only amount. Do not append another cloud-only child for that
+month. This update is the only routine exception to the append-only rule. Never
+create or update it with a negative value; stop and report a reconciliation
+anomaly instead.
+
 ## Simplifying the live database
 
 When the user asks to remove redundant properties:
@@ -75,7 +93,7 @@ When the user asks to remove redundant properties:
    fallback invoked through `claude -p` becomes eligible for the next audit, not
    the snapshot currently being written.
 2. Query all existing parents and all dated sub-items for the audit month,
-   following pagination.
+   following pagination. Include the dedicated cloud-only parent and its child.
 3. Reuse the parent whose `Issue` exactly matches the full natural
    task-and-objective prose. Create an undated, uncosted parent only when no exact
    match exists. Reuse the same parent in later months.
@@ -85,15 +103,20 @@ When the user asks to remove redundant properties:
 5. Before creating a child, compare the exact tuple of `Issue`, `Parent item`,
    `Work date`, and unrounded `Raw cost` with existing children. Skip exact
    matches. This is the duplicate guard; there is no usage-ID property.
-6. Append missing parents and unmatched children only. Never update, delete,
-   archive, or replace a row outside the explicit corrections workflow.
-7. Read the created rows and affected parents back. Verify the child fields,
-   reciprocal relations, parent reference, cost formula, and raw child-cost sum.
+6. Reuse or create the dedicated cloud-only parent. Create its monthly child
+   when absent; otherwise update that child in place with the latest Settings
+   date and cloud-only amount. Never distribute this amount across local rows.
+7. Append missing local parents and unmatched local children only. Never update,
+   delete, archive, or replace a local row outside the explicit corrections
+   workflow.
+8. Read the created or updated rows and affected parents back. Verify the child
+   fields, reciprocal relations, parent reference, cost formula, and raw
+   child-cost sum.
    Treat the write as successful only when permission denials are empty and the
    available read-back matches. For a schema repair, also inspect the live
    Notion property editor and confirm the formula uses the intended native
    `Sub-item` relation.
-8. Notion connector reads may return computed properties as `<omitted />` or
+9. Notion connector reads may return computed properties as `<omitted />` or
    `formulaResult://...` references that the fetch tool cannot resolve. Never
    infer a rendered parent value from its children and call it verified. Report
    that the rendered calculation was not verified unless a supported tool or
@@ -101,25 +124,25 @@ When the user asks to remove redundant properties:
    refresh Notion, confirm each affected parent shows the expected total, and
    confirm the `Estimated cost (USD)` footer equals the authoritative monthly
    total.
-9. Never run `ALTER COLUMN "Estimated cost (USD)" SET NUMBER FORMAT ...` through
+10. Never run `ALTER COLUMN "Estimated cost (USD)" SET NUMBER FORMAT ...` through
    `notion-update-data-source`. The current connector converts the formula into
    a plain number property. Preserve the formula type and expression; treat
    currency display formatting as a separate manual/UI concern when the
    connector cannot update it safely.
-10. Query all dated child rows for the audit month again. Build the chat report
-   only from this query, grouping by parent. Sum `Raw cost` on the children and
-   never sum `Estimated cost (USD)` across mixed parent and child rows, which
-   would double-count usage.
+11. Query all dated child rows for the audit month again. Build the chat report
+   only from this query. Sum local children separately from the cloud-only child.
+   Render local parents as numbered workstreams and the cloud-only parent as its
+   own unnumbered section. Never sum `Estimated cost (USD)` across mixed parent
+   and child rows, which would double-count usage.
 
 ## Corrections
 
-When the user explicitly asks to correct an existing audit after supplying a new
-authoritative Claude total, update the matching current-month sub-items in place.
-Keep their `Issue`, `Parent item`, and dates unchanged. Replace only their
-unrounded `Raw cost` values using the collector's reconciled prompt weights. Do
-not append revised duplicates. Read every corrected child and affected parent
-back, then require the sum of that month's child raw costs to equal the
-authoritative total before reporting success. Do not substitute this arithmetic
+When the user supplies a corrected Claude Settings total, leave evidenced local
+rows unchanged. Recalculate the cloud-only amount from the unscaled local total
+and update only that month's cloud-only child. If new local transcripts also
+appeared, append their missing local rows first and then update the cloud-only
+child. Require the unrounded local child sum plus the cloud-only child to equal
+the Settings total before reporting success. Do not substitute this arithmetic
 check for rendered formula or rollup verification.
 
 Use direct Notion tools when available. If they are unavailable, use a scoped
