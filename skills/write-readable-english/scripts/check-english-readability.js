@@ -4,239 +4,95 @@
 const fs = require("fs");
 const path = require("path");
 
-const DEFAULT_MAX_GRADE = 9;
-const DEFAULT_MAX_SENTENCE_INCREASE = 2;
 const DEFAULT_READING_TARGET = "NORMAL";
 const MARKDOWN_EXTENSIONS = new Set([".md", ".markdown", ".mdown", ".mkd", ".mkdn"]);
-
 const READABILITY_THRESHOLDS = {
-  ACCESSIBLE: {
-    tooFewWordCount: 8,
-    hardReadabilityLevel: 8,
-    veryHardReadabilityLevel: 12,
-  },
-  NORMAL: {
-    tooFewWordCount: 14,
-    hardReadabilityLevel: 10,
-    veryHardReadabilityLevel: 14,
-  },
-  TECHNICAL: {
-    tooFewWordCount: 14,
-    hardReadabilityLevel: 14,
-    veryHardReadabilityLevel: 18,
-  },
+  ACCESSIBLE: { minimumWords: 8, hard: 8, veryHard: 12 },
+  NORMAL: { minimumWords: 14, hard: 10, veryHard: 14 },
+  TECHNICAL: { minimumWords: 14, hard: 14, veryHard: 18 },
 };
-
-const SENTENCE_DELIMITER_SOURCE = String.raw`[.?!]{1,2}["”'\)]?(?:\s|$)|\n+`;
-const WORD_DELIMITER_SOURCE = String.raw`[^\w'-]`;
-const ABBREVIATION_AT_END = /\b(Mr|Ms|Mrs|Dr|U\.S|Col|Sgt|Lt|Adm|Maj|Sen|Rep|Jan|Feb|Apr|Mar|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|Pvt|Cpl|Capt|Gen|Ave|St|inc|ft|Gov|Jr|Sr|ltd|Rev|M|Mme|Prof|Pres|Hon|etc|vs|\.\.|e\.g|i\.e|a\.m|p\.m|[A-Z])$/;
-const ACRONYM = /\b[A-Z]{2,}[A-Z0-9-]*\b/g;
-const TECHNICAL_TOKEN = /\b[A-Z][a-z]+(?:[A-Z0-9][A-Za-z0-9-]*)\b/g;
-const TITLE_CASE_TERM = /\b[A-Z][A-Za-z0-9-]*(?:\s+(?:of|for|and|the|to|on|in|&|[A-Z][A-Za-z0-9-]*)){1,6}\b/g;
-
-const ADVERB_EXCEPTIONS = new Set([
-  "actually",
-  "ally",
-  "apply",
-  "assembly",
-  "belly",
-  "butterfly",
-  "completely",
-  "comply",
-  "costly",
-  "currently",
-  "daily",
-  "early",
-  "elderly",
-  "family",
-  "finally",
-  "friendly",
-  "generally",
-  "hardly",
-  "holy",
-  "immediately",
-  "july",
-  "kindly",
-  "lately",
-  "likely",
-  "lively",
-  "lonely",
-  "lovely",
-  "only",
-  "particularly",
-  "previously",
-  "rarely",
-  "recently",
-  "reply",
-  "shortly",
-  "silly",
-  "supply",
-  "timely",
-  "ugly",
-  "unlikely",
-  "usually",
-  "weekly",
-  "wholly",
-  "yearly",
-]);
-
 const IRREGULAR_PARTICIPLES = new Set([
-  "beaten",
-  "been",
-  "begun",
-  "bent",
-  "bitten",
-  "blown",
-  "bought",
-  "broken",
-  "brought",
-  "built",
-  "caught",
-  "chosen",
-  "done",
-  "drawn",
-  "driven",
-  "eaten",
-  "fallen",
-  "felt",
-  "found",
-  "given",
-  "grown",
-  "held",
-  "hidden",
-  "known",
-  "laid",
-  "led",
-  "left",
-  "lost",
-  "made",
-  "meant",
-  "paid",
-  "proven",
-  "read",
-  "ridden",
-  "risen",
-  "run",
-  "said",
-  "seen",
-  "sent",
-  "shown",
-  "sold",
-  "spoken",
-  "spent",
-  "split",
-  "stolen",
-  "struck",
-  "taken",
-  "taught",
-  "thought",
-  "thrown",
-  "told",
-  "torn",
-  "understood",
-  "won",
-  "worn",
-  "written",
+  "beaten", "been", "begun", "bent", "blown", "bought", "broken", "brought", "built",
+  "caught", "chosen", "done", "drawn", "driven", "eaten", "fallen", "felt", "found",
+  "given", "grown", "held", "hidden", "known", "laid", "led", "left", "lost", "made",
+  "meant", "paid", "proven", "read", "ridden", "risen", "run", "said", "seen", "sent",
+  "shown", "sold", "spoken", "spent", "split", "stolen", "struck", "taken", "taught",
+  "thought", "thrown", "told", "torn", "understood", "won", "worn", "written",
 ]);
-
-const QUALIFIERS = new Set([
-  "i believe",
-  "i consider",
-  "i don't believe",
-  "i don't consider",
-  "i don't feel",
-  "i don't suggest",
-  "i don't think",
-  "i feel",
-  "i hope to",
-  "i might",
-  "i suggest",
-  "i think",
-  "i was wondering",
-  "i will try",
-  "i wonder",
-  "in my opinion",
-  "is kind of",
-  "is sort of",
-  "just",
-  "maybe",
-  "perhaps",
-  "possibly",
-  "we believe",
-  "we consider",
-  "we don't believe",
-  "we don't consider",
-  "we don't feel",
-  "we don't suggest",
-  "we don't think",
-  "we feel",
-  "we hope to",
-  "we might",
-  "we suggest",
-  "we think",
-  "we were wondering",
-  "we will try",
-  "we wonder",
+const ADVERB_EXCEPTIONS = new Set([
+  "actually", "ally", "apply", "assembly", "belly", "butterfly", "completely", "comply",
+  "costly", "currently", "daily", "early", "elderly", "family", "finally", "friendly",
+  "generally", "hardly", "holy", "immediately", "july", "kindly", "lately", "likely",
+  "lively", "lonely", "lovely", "only", "particularly", "previously", "rarely", "recently",
+  "reply", "shortly", "silly", "supply", "timely", "ugly", "unlikely", "usually", "weekly",
+  "wholly", "yearly",
 ]);
-
-const COMPLEX_ALTERNATIVES = new Map([
-  ["additional", ["more", "extra"]],
-  ["adjacent to", ["next to"]],
-  ["advise", ["tell"]],
-  ["approximately", ["about"]],
-  ["ascertain", ["find out"]],
-  ["assistance", ["help"]],
-  ["at this time", ["now"]],
-  ["commence", ["begin", "start"]],
-  ["concerning", ["about"]],
-  ["consequently", ["so"]],
-  ["demonstrate", ["show", "prove"]],
-  ["due to the fact that", ["because"]],
-  ["eliminate", ["cut", "remove"]],
-  ["endeavor", ["try"]],
-  ["facilitate", ["help", "ease"]],
-  ["for the purpose of", ["to"]],
-  ["in addition", ["also"]],
-  ["in order to", ["to"]],
-  ["in regard to", ["about"]],
-  ["in the near future", ["soon"]],
-  ["indicate", ["say", "show"]],
-  ["initiate", ["start"]],
-  ["multiple", ["many"]],
-  ["necessitate", ["need", "cause"]],
-  ["nevertheless", ["still"]],
-  ["numerous", ["many"]],
-  ["obtain", ["get"]],
-  ["participate", ["take part"]],
-  ["pertaining to", ["about"]],
-  ["previously", ["before"]],
-  ["prior to", ["before"]],
-  ["purchase", ["buy"]],
-  ["regarding", ["about"]],
-  ["require", ["need", "must"]],
-  ["reside", ["live"]],
-  ["sufficient", ["enough"]],
-  ["terminate", ["end", "stop"]],
-  ["therefore", ["so"]],
-  ["transmit", ["send"]],
-  ["utilise", ["use"]],
-  ["utilize", ["use"]],
-  ["with respect to", ["about"]],
+const QUALIFIERS = [
+  "i believe", "i consider", "i don't believe", "i don't consider", "i don't feel",
+  "i don't suggest", "i don't think", "i feel", "i hope to", "i might", "i suggest",
+  "i think", "i was wondering", "i will try", "i wonder", "in my opinion", "is kind of",
+  "is sort of", "just", "maybe", "perhaps", "possibly", "we believe", "we consider",
+  "we don't believe", "we don't consider", "we don't feel", "we don't suggest",
+  "we don't think", "we feel", "we hope to", "we might", "we suggest", "we think",
+  "we were wondering", "we will try", "we wonder",
+];
+const COMPLEX_TERMS = [
+  "additional", "adjacent to", "advise", "approximately", "ascertain", "assistance",
+  "at this time", "commence", "concerning", "consequently", "demonstrate",
+  "due to the fact that", "eliminate", "endeavor", "facilitate", "for the purpose of",
+  "in addition", "in order to", "in regard to", "in the near future", "indicate", "initiate",
+  "multiple", "necessitate", "nevertheless", "numerous", "obtain", "participate",
+  "pertaining to", "previously", "prior to", "purchase", "regarding", "require", "reside",
+  "sufficient", "terminate", "therefore", "transmit", "utilise", "utilize", "with respect to",
+];
+const MODAL_AND_CONDITION_PATTERNS = [
+  /\bmust\b/gi,
+  /\bmust not\b/gi,
+  /\bmay\b/gi,
+  /\bmight\b/gi,
+  /\bshould\b/gi,
+  /\bshould not\b/gi,
+  /\bcan\b/gi,
+  /\bcannot\b/gi,
+  /\bif\b/gi,
+  /\bonly if\b/gi,
+  /\bunless\b/gi,
+  /\bwhen\b/gi,
+  /\bbefore\b/gi,
+  /\bafter\b/gi,
+];
+const PASSIVE_ADJECTIVE_EXCEPTIONS = new Set([
+  "afraid", "alive", "alone", "asleep", "aware", "bored", "concerned", "excited", "glad",
+  "interested", "pleased", "ready", "satisfied", "surprised", "tired", "upset", "worried",
 ]);
+const SENTENCE_PERIOD_PLACEHOLDER = "\uE000";
 
 function main() {
   try {
     const options = parseArguments(process.argv.slice(2));
-    const text = prepareInputText(readInput(options), options.file);
-    const report = analyseText(text, options);
+    const inputs = readInputs(options);
+    const reference = readReference(options);
 
-    if (options.json) {
-      console.log(JSON.stringify(report, null, 2));
-    } else {
-      printHumanReport(report);
+    if (reference && inputs.length !== 1) {
+      throw new Error("preservation comparison requires exactly one input");
     }
 
-    process.exitCode = report.passes ? 0 : 1;
+    const reports = inputs.map((input) => {
+      const report = analyseText(prepareInputText(input.text, input.sourcePath), {
+        readingTarget: options.readingTarget,
+      });
+      return {
+        source: input.label,
+        ...report,
+        ...(reference ? { preservation: comparePreservation(reference.text, input.text) } : {}),
+      };
+    });
+
+    if (options.json) {
+      console.log(JSON.stringify(reports.length === 1 ? reports[0] : { inputs: reports }, null, 2));
+    } else {
+      printHumanReports(reports);
+    }
   } catch (error) {
     console.error(`check-english-readability: ${error.message}`);
     process.exitCode = 2;
@@ -245,78 +101,53 @@ function main() {
 
 function parseArguments(args) {
   const options = {
-    file: undefined,
+    inputs: [],
     json: false,
-    maxGrade: DEFAULT_MAX_GRADE,
-    maxSentenceIncrease: DEFAULT_MAX_SENTENCE_INCREASE,
-    minGrade: null,
-    referenceFile: undefined,
     readingTarget: DEFAULT_READING_TARGET,
+    reference: undefined,
   };
 
   for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index];
-    if (arg === "--file") {
-      options.file = requireValue(args, index, arg);
+    const argument = args[index];
+
+    if (argument === "--file") {
+      const sourcePath = requireValue(args, index, argument);
+      options.inputs.push({ kind: "file", value: sourcePath });
       index += 1;
       continue;
     }
-    if (arg === "--json") {
+    if (argument === "--reference") {
+      options.reference = { kind: "text", value: requireValue(args, index, argument) };
+      index += 1;
+      continue;
+    }
+    if (argument === "--reference-file") {
+      options.reference = { kind: "file", value: requireValue(args, index, argument) };
+      index += 1;
+      continue;
+    }
+    if (argument === "--target") {
+      const readingTarget = requireValue(args, index, argument).toUpperCase();
+      if (!READABILITY_THRESHOLDS[readingTarget]) {
+        throw new Error("--target must be ACCESSIBLE, NORMAL, or TECHNICAL");
+      }
+      options.readingTarget = readingTarget;
+      index += 1;
+      continue;
+    }
+    if (argument === "--json") {
       options.json = true;
       continue;
     }
-    if (arg === "--max-grade") {
-      const rawValue = requireValue(args, index, arg);
-      const parsed = Number.parseInt(rawValue, 10);
-      if (!Number.isFinite(parsed) || parsed < 0) {
-        throw new Error("--max-grade must be a non-negative integer");
-      }
-      options.maxGrade = parsed;
-      index += 1;
-      continue;
-    }
-    if (arg === "--min-grade") {
-      const rawValue = requireValue(args, index, arg);
-      const parsed = Number.parseInt(rawValue, 10);
-      if (!Number.isFinite(parsed) || parsed < 0) {
-        throw new Error("--min-grade must be a non-negative integer");
-      }
-      options.minGrade = parsed;
-      index += 1;
-      continue;
-    }
-    if (arg === "--reference-file") {
-      options.referenceFile = requireValue(args, index, arg);
-      index += 1;
-      continue;
-    }
-    if (arg === "--max-sentence-increase") {
-      const rawValue = requireValue(args, index, arg);
-      const parsed = Number.parseInt(rawValue, 10);
-      if (!Number.isFinite(parsed) || parsed < 0) {
-        throw new Error("--max-sentence-increase must be a non-negative integer");
-      }
-      options.maxSentenceIncrease = parsed;
-      index += 1;
-      continue;
-    }
-    if (arg === "--target") {
-      const target = requireValue(args, index, arg).toUpperCase();
-      if (!READABILITY_THRESHOLDS[target]) {
-        throw new Error("--target must be ACCESSIBLE, NORMAL, or TECHNICAL");
-      }
-      options.readingTarget = target;
-      index += 1;
-      continue;
-    }
-    if (arg === "--help" || arg === "-h") {
+    if (argument === "--help" || argument === "-h") {
       printHelp();
       process.exit(0);
     }
-    throw new Error(`unknown argument: ${arg}`);
-  }
-  if (options.minGrade !== null && options.minGrade > options.maxGrade) {
-    throw new Error("--min-grade must be less than or equal to --max-grade");
+    if (argument.startsWith("--")) {
+      throw new Error(`unknown argument: ${argument}`);
+    }
+
+    options.inputs.push({ kind: "text", value: argument });
   }
 
   return options;
@@ -324,550 +155,168 @@ function parseArguments(args) {
 
 function requireValue(args, index, flag) {
   const value = args[index + 1];
-  if (!value || value.startsWith("--")) {
+  if (value === undefined || value.startsWith("--")) {
     throw new Error(`${flag} requires a value`);
   }
   return value;
 }
 
-function readInput(options) {
-  if (options.file && options.file !== "-") {
-    return fs.readFileSync(options.file, "utf8");
+function readInputs(options) {
+  if (options.inputs.length === 0) {
+    if (process.stdin.isTTY) {
+      throw new Error("provide quoted text, --file, or text on stdin");
+    }
+    return [{ label: "stdin", text: fs.readFileSync(0, "utf8") }];
   }
 
-  if (!process.stdin.isTTY) {
-    return fs.readFileSync(0, "utf8");
-  }
+  return options.inputs.map((input, index) => {
+    if (input.kind === "file") {
+      return {
+        label: input.value,
+        sourcePath: input.value,
+        text: fs.readFileSync(input.value, "utf8"),
+      };
+    }
+    return { label: `text:${index + 1}`, text: input.value };
+  });
+}
 
-  throw new Error("provide text on stdin or with --file");
+function readReference(options) {
+  if (!options.reference) {
+    return undefined;
+  }
+  if (options.reference.kind === "file") {
+    return { text: fs.readFileSync(options.reference.value, "utf8") };
+  }
+  return { text: options.reference.value };
 }
 
 function prepareInputText(text, sourcePath) {
-  if (isMarkdownPath(sourcePath)) {
-    return stripMarkdownForReadability(text);
-  }
-
-  return text;
+  return isMarkdownPath(sourcePath) ? stripMarkdownForReadability(text) : text;
 }
 
 function isMarkdownPath(sourcePath) {
-  if (!sourcePath || sourcePath === "-") {
-    return false;
-  }
-
-  return MARKDOWN_EXTENSIONS.has(path.extname(sourcePath).toLowerCase());
+  return Boolean(sourcePath && MARKDOWN_EXTENSIONS.has(path.extname(sourcePath).toLowerCase()));
 }
 
 function stripMarkdownForReadability(markdown) {
-  const normalised = markdown.replace(/\r\n?/g, "\n");
-  const withoutFrontMatter = stripYamlFrontMatter(normalised);
-  const withoutComments = withoutFrontMatter.replace(/<!--[\s\S]*?-->/g, "");
-  const withoutCodeBlocks = stripMarkdownCodeBlocks(withoutComments);
+  let text = markdown.replace(/\r\n?/g, "\n");
+  text = text.replace(/^---\n[\s\S]*?\n(?:---|\.\.\.)\s*\n/, "");
+  text = text.replace(/<!--[\s\S]*?-->/g, "");
+  text = text.replace(/^\s{0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\s{0,3}\1\s*$/gm, "");
 
-  return withoutCodeBlocks
+  return text
     .split("\n")
-    .map(normaliseMarkdownLine)
+    .filter((line) => !/^\s{4}|^\t/.test(line))
+    .filter((line) => !/^\s{0,3}\[[^\]]+\]:\s+\S+/.test(line))
+    .filter((line) => !/^\s{0,3}(?:[-*_]\s*){3,}$/.test(line))
+    .map((line) => line
+      .replace(/^\s{0,3}#{1,6}\s*/, "")
+      .replace(/^\s{0,3}>\s?/, "")
+      .replace(/^\s{0,3}(?:[-+*]|\d{1,9}[.)])\s+/, "")
+      .replace(/^\s*\[[ xX]\]\s+/, "")
+      .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/(?:\*\*|__|~~)(.*?)(?:\*\*|__|~~)/g, "$1")
+      .replace(/[*_](.*?)[*_]/g, "$1")
+      .replace(/<[^>\n]+>/g, "")
+      .trim())
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
-function stripYamlFrontMatter(markdown) {
-  const lines = markdown.split("\n");
-  if (lines[0]?.trim() !== "---") {
-    return markdown;
-  }
-
-  for (let index = 1; index < lines.length; index += 1) {
-    if (/^(---|\.\.\.)\s*$/.test(lines[index].trim())) {
-      return lines.slice(index + 1).join("\n");
-    }
-  }
-
-  return markdown;
-}
-
-function stripMarkdownCodeBlocks(markdown) {
-  const lines = markdown.split("\n");
-  const visibleLines = [];
-  let activeFenceMarker = undefined;
-
-  for (const line of lines) {
-    const fenceMatch = line.match(/^\s{0,3}(`{3,}|~{3,})/);
-    if (fenceMatch) {
-      const marker = fenceMatch[1][0];
-      if (!activeFenceMarker) {
-        activeFenceMarker = marker;
-        continue;
-      }
-      if (activeFenceMarker === marker) {
-        activeFenceMarker = undefined;
-        continue;
-      }
-    }
-
-    if (activeFenceMarker) {
-      continue;
-    }
-
-    if (/^(?: {4}|\t)/.test(line)) {
-      continue;
-    }
-
-    visibleLines.push(line);
-  }
-
-  return visibleLines.join("\n");
-}
-
-function normaliseMarkdownLine(line) {
-  if (isMarkdownReferenceDefinition(line) || isMarkdownRule(line) || isMarkdownTableSeparator(line)) {
-    return "";
-  }
-
-  let result = line;
-  result = stripMarkdownBlockPrefixes(result);
-
-  if (isMarkdownTableRow(result)) {
-    return result
-      .replace(/^\s*\|/, "")
-      .replace(/\|\s*$/, "")
-      .split("|")
-      .map(stripInlineMarkdown)
-      .filter((cell) => cell.length > 0)
-      .join(". ");
-  }
-
-  return stripInlineMarkdown(result);
-}
-
-function isMarkdownReferenceDefinition(line) {
-  return /^\s{0,3}\[[^\]]+\]:\s+\S+/.test(line);
-}
-
-function isMarkdownRule(line) {
-  return /^\s{0,3}(?:[-*_]\s*){3,}$/.test(line);
-}
-
-function isMarkdownTableSeparator(line) {
-  return /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
-}
-
-function isMarkdownTableRow(line) {
-  return line.includes("|");
-}
-
-function stripMarkdownBlockPrefixes(line) {
-  let result = line.replace(/^\s{0,3}#{1,6}\s*/, "").replace(/\s+#{1,6}\s*$/, "");
-
-  while (/^\s{0,3}>\s?/.test(result)) {
-    result = result.replace(/^\s{0,3}>\s?/, "");
-  }
-
-  result = result.replace(/^\s{0,3}(?:[-+*]|\d{1,9}[.)])\s+/, "");
-  result = result.replace(/^\s*\[[ xX]\]\s+/, "");
-  return result;
-}
-
-function stripInlineMarkdown(text) {
-  return text
-    .replace(/\\([\\`*{}\[\]()#+\-.!_>])/g, "$1")
-    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
-    .replace(/!\[([^\]]*)\]\[[^\]]*\]/g, "$1")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/\[([^\]]+)\]\[[^\]]*\]/g, "$1")
-    .replace(/\[\^[^\]]+\]/g, "")
-    .replace(/<https?:\/\/[^>\s]+>/g, " ")
-    .replace(/https?:\/\/\S+/g, " ")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/~~([^~]+)~~/g, "$1")
-    .replace(/\*\*\*([^*]+)\*\*\*/g, "$1")
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/___([^_]+)___/g, "$1")
-    .replace(/__([^_]+)__/g, "$1")
-    .replace(/_([^_]+)_/g, "$1")
-    .replace(/<[^>\n]+>/g, " ")
-    .replace(/\s+([,;:!?])/g, "$1")
-    .replace(/\s+\.(?=\s|$)/g, ".")
-    .replace(/[ \t]+/g, " ")
-    .trim();
-}
-
 function analyseText(text, options = {}) {
-  const maxGrade = options.maxGrade ?? DEFAULT_MAX_GRADE;
-  const minGrade = options.minGrade ?? null;
-  const readingTarget = normaliseReadingTarget(options.readingTarget);
-  const parserSettings = { readingLevelTarget: readingTarget };
-  const paragraphTexts = splitParagraphs(text);
-  const paragraphs = paragraphTexts.map((paragraphText, index) =>
-    analyseParagraph(paragraphText, index + 1, parserSettings),
-  );
+  const readingTarget = options.readingTarget ?? DEFAULT_READING_TARGET;
+  const paragraphs = splitParagraphs(text);
+  const sentences = [];
 
-  const sentences = paragraphs.flatMap((paragraph) => paragraph.sentences);
-  const totals = sumSentenceStats(sentences);
-  const rawReadingLevel = calculateGrade({
-    letters: totals.letters,
-    sentences: sentences.length,
-    words: totals.words,
-  });
-  const readingLevel = calculateGrade({
-    letters: totals.effectiveLetters,
-    sentences: sentences.length,
-    words: totals.effectiveWords,
-  });
-  const readability = classifyReadability({
-    parserSettings,
-    readingLevel,
-    words: totals.effectiveWords,
-  });
-  const targetGradeBreaches = sentences.filter((sentence) => sentence.effectiveReadingLevel > maxGrade);
-  const veryHardSentences = sentences.filter((sentence) => sentence.effectiveReadability === "veryHard");
-  const hardSentences = sentences.filter((sentence) => sentence.effectiveReadability === "hard");
-  const complexWords = sentences.flatMap((sentence) => sentence.issues.complex);
-  const qualifiers = sentences.flatMap((sentence) => sentence.issues.qualifiers);
-  const adverbs = sentences.flatMap((sentence) => sentence.issues.adverbs);
-  const passiveVoice = sentences.flatMap((sentence) => sentence.issues.passiveVoice);
-  const reference = analyseReference(options.referenceFile, options.maxSentenceIncrease);
-  const shape = compareShape({
-    candidateParagraphs: paragraphs.length,
-    candidateSentences: sentences.length,
-    reference,
-  });
-  const passes =
-    readingLevel <= maxGrade &&
-    (minGrade === null || rawReadingLevel >= minGrade) &&
-    targetGradeBreaches.length === 0 &&
-    veryHardSentences.length === 0 &&
-    shape.passes;
+  for (let paragraphIndex = 0; paragraphIndex < paragraphs.length; paragraphIndex += 1) {
+    const sentenceTexts = splitSentences(paragraphs[paragraphIndex]);
+    for (let sentenceIndex = 0; sentenceIndex < sentenceTexts.length; sentenceIndex += 1) {
+      sentences.push(analyseSentence(sentenceTexts[sentenceIndex], {
+        paragraph: paragraphIndex + 1,
+        readingTarget,
+        sentence: sentenceIndex + 1,
+      }));
+    }
+  }
+
+  const words = sentences.reduce((total, sentence) => total + sentence.words, 0);
+  const letters = sentences.reduce((total, sentence) => total + sentence.letters, 0);
+  const readingGrade = calculateGrade({ letters, sentences: sentences.length, words });
+  const candidates = buildCandidates(sentences);
 
   return {
-    passes,
-    target: {
-      maxGrade,
-      minGrade,
-      readingTarget,
-    },
-    shape,
+    target: readingTarget,
     stats: {
-      adverbs: adverbs.length,
-      characters: text.length,
-      complexWords: complexWords.length,
-      hardSentences: hardSentences.length,
-      effectiveLetters: totals.effectiveLetters,
-      effectiveWords: totals.effectiveWords,
-      letters: totals.letters,
       paragraphs: paragraphs.length,
-      passiveVoice: passiveVoice.length,
-      qualifiers: qualifiers.length,
-      rawReadingLevel,
-      readability,
-      readingLevel,
       sentences: sentences.length,
-      targetGradeBreaches: targetGradeBreaches.length,
-      veryHardSentences: veryHardSentences.length,
-      words: totals.words,
+      words,
+      letters,
+      readingGrade,
+      hardSentences: sentences.filter((sentence) => sentence.readability === "hard").length,
+      veryHardSentences: sentences.filter((sentence) => sentence.readability === "veryHard").length,
+      adverbs: countIssues(sentences, "adverbs"),
+      passiveVoice: countIssues(sentences, "passiveVoice"),
+      qualifiers: countIssues(sentences, "qualifiers"),
+      complexTerms: countIssues(sentences, "complexTerms"),
     },
-    sentences,
-    issues: {
-      adverbs,
-      complexWords,
-      hardSentences,
-      passiveVoice,
-      qualifiers,
-      targetGradeBreaches,
-      veryHardSentences,
-    },
+    candidates,
   };
-}
-
-function analyseReference(referenceFile, maxSentenceIncrease) {
-  if (!referenceFile) {
-    return undefined;
-  }
-
-  const referenceText = prepareInputText(fs.readFileSync(referenceFile, "utf8"), referenceFile);
-  const paragraphs = splitParagraphs(referenceText);
-  const sentences = paragraphs.flatMap((paragraph) => splitSentences(paragraph));
-
-  return {
-    maxSentenceIncrease: maxSentenceIncrease ?? DEFAULT_MAX_SENTENCE_INCREASE,
-    paragraphs: paragraphs.length,
-    sentences: sentences.length,
-  };
-}
-
-function compareShape({ candidateParagraphs, candidateSentences, reference }) {
-  if (!reference) {
-    return {
-      passes: true,
-    };
-  }
-
-  const sentenceIncrease = candidateSentences - reference.sentences;
-  const paragraphCountMatches = candidateParagraphs === reference.paragraphs;
-  const sentenceIncreaseAllowed = sentenceIncrease <= reference.maxSentenceIncrease;
-
-  return {
-    candidateParagraphs,
-    candidateSentences,
-    maxSentenceIncrease: reference.maxSentenceIncrease,
-    paragraphCountMatches,
-    passes: paragraphCountMatches && sentenceIncreaseAllowed,
-    referenceParagraphs: reference.paragraphs,
-    referenceSentences: reference.sentences,
-    sentenceIncrease,
-    sentenceIncreaseAllowed,
-  };
-}
-
-function normaliseReadingTarget(target) {
-  const readingTarget = (target ?? DEFAULT_READING_TARGET).toUpperCase();
-  if (!READABILITY_THRESHOLDS[readingTarget]) {
-    throw new Error(`unknown reading target: ${target}`);
-  }
-  return readingTarget;
 }
 
 function splitParagraphs(text) {
-  return text
-    .split(/\r?\n+/)
-    .map((paragraph) => paragraph.trim())
-    .filter((paragraph) => paragraph.length > 0);
-}
-
-function analyseParagraph(text, paragraphNumber, parserSettings) {
-  const rawSentences = splitSentences(text);
-  const sentences = rawSentences.map((sentenceText, index) =>
-    analyseSentence(sentenceText, {
-      parserSettings,
-      paragraphNumber,
-      sentenceNumber: index + 1,
-    }),
-  );
-
-  return {
-    paragraphNumber,
-    sentences,
-    text,
-  };
+  return text.split(/\r?\n+/).map((value) => value.trim()).filter(Boolean);
 }
 
 function splitSentences(text) {
-  const parts = splitWithDelimiters(text, SENTENCE_DELIMITER_SOURCE);
-  const sentences = [];
+  const protectedText = text
+    .replace(/\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|e\.g|i\.e|U\.S)\./gi, (match) => {
+      return match.replaceAll(".", SENTENCE_PERIOD_PLACEHOLDER);
+    })
+    .replace(/(\d)\.(?=\d)/g, `$1${SENTENCE_PERIOD_PLACEHOLDER}`);
+  const matches = protectedText.match(/[^.!?]+(?:[.!?]+["”')]*|$)/g) ?? [];
 
-  for (let index = 0; index < parts.length; index += 1) {
-    const part = parts[index];
-    if (isDelimiter(part, SENTENCE_DELIMITER_SOURCE) || part.trim().length === 0) {
-      continue;
-    }
-
-    let sentenceText = part;
-    while (ABBREVIATION_AT_END.test(sentenceText) && parts[index + 1] && parts[index + 2]) {
-      sentenceText += parts[index + 1] + parts[index + 2];
-      index += 2;
-    }
-
-    sentences.push(sentenceText.trim());
-  }
-
-  return sentences;
+  return matches
+    .map((value) => value.replaceAll(SENTENCE_PERIOD_PLACEHOLDER, ".").trim())
+    .filter(Boolean);
 }
 
 function analyseSentence(text, context) {
-  const words = splitWords(text);
-  const letters = countLetters(words);
-  const protectedTerms = detectProtectedTerms(text);
-  const adjustedText = normaliseProtectedTerms(text, protectedTerms);
-  const adjustedWords = splitWords(adjustedText);
-  const adjustedLetters = countLetters(adjustedWords);
-  const readingLevel = calculateGrade({
-    letters,
-    sentences: 1,
-    words: words.length,
-  });
-  const effectiveReadingLevel = calculateGrade({
-    letters: adjustedLetters,
-    sentences: 1,
-    words: adjustedWords.length,
-  });
-  const readability = classifyReadability({
-    parserSettings: context.parserSettings,
-    readingLevel,
-    words: words.length,
-  });
-  const effectiveReadability = classifyReadability({
-    parserSettings: context.parserSettings,
-    readingLevel: effectiveReadingLevel,
-    words: adjustedWords.length,
-  });
+  const wordList = text.match(/\b[\w'-]+\b/g) ?? [];
+  const letters = wordList.reduce((total, word) => total + (word.match(/\w/g) ?? []).length, 0);
+  const readingGrade = calculateGrade({ letters, sentences: 1, words: wordList.length });
+  const thresholds = READABILITY_THRESHOLDS[context.readingTarget];
+  let readability = "normal";
+  if (wordList.length >= thresholds.minimumWords && readingGrade >= thresholds.veryHard) {
+    readability = "veryHard";
+  } else if (wordList.length >= thresholds.minimumWords && readingGrade >= thresholds.hard) {
+    readability = "hard";
+  }
 
   return {
-    paragraphNumber: context.paragraphNumber,
-    sentenceNumber: context.sentenceNumber,
+    location: { paragraph: context.paragraph, sentence: context.sentence },
     text,
-    protectedTerms: protectedTerms.map((term) => term.text),
-    stats: {
-      effectiveLetters: adjustedLetters,
-      effectiveWords: adjustedWords.length,
-      letters,
-      words: words.length,
-    },
-    effectiveReadingLevel,
-    effectiveReadability,
+    words: wordList.length,
+    letters,
+    readingGrade,
     readability,
-    readingLevel,
-    issues: detectIssues(text, words),
+    issues: {
+      adverbs: detectAdverbs(wordList),
+      passiveVoice: detectPassiveVoice(text),
+      qualifiers: detectPhrases(text, QUALIFIERS),
+      complexTerms: detectPhrases(text, COMPLEX_TERMS),
+    },
   };
-}
-
-function splitWithDelimiters(text, delimiterSource) {
-  return text.split(new RegExp(`(${delimiterSource})`, "g"));
-}
-
-function isDelimiter(value, delimiterSource) {
-  return new RegExp(delimiterSource).test(value);
-}
-
-function splitWords(text) {
-  return splitWithDelimiters(text, WORD_DELIMITER_SOURCE).filter((part) => {
-    return !isDelimiter(part, WORD_DELIMITER_SOURCE) && part.trim().length > 0;
-  });
-}
-
-function countLetters(words) {
-  let letters = 0;
-  for (const word of words) {
-    const matches = word.match(/\w/g);
-    letters += matches ? matches.length : 0;
-  }
-  return letters;
 }
 
 function calculateGrade({ letters, sentences, words }) {
   if (words === 0 || sentences === 0) {
     return 0;
   }
-
   return Math.max(Math.round((letters / words) * 4.71 + (words / sentences) * 0.5 - 21.43), 0);
-}
-
-function classifyReadability({ parserSettings, readingLevel, words }) {
-  const thresholds = READABILITY_THRESHOLDS[parserSettings.readingLevelTarget];
-
-  if (words < thresholds.tooFewWordCount) {
-    return "normal";
-  }
-  if (readingLevel >= thresholds.veryHardReadabilityLevel) {
-    return "veryHard";
-  }
-  if (readingLevel >= thresholds.hardReadabilityLevel) {
-    return "hard";
-  }
-  return "normal";
-}
-
-function sumSentenceStats(sentences) {
-  const totals = {
-    effectiveLetters: 0,
-    effectiveWords: 0,
-    letters: 0,
-    words: 0,
-  };
-
-  for (const sentence of sentences) {
-    totals.effectiveLetters += sentence.stats.effectiveLetters;
-    totals.effectiveWords += sentence.stats.effectiveWords;
-    totals.letters += sentence.stats.letters;
-    totals.words += sentence.stats.words;
-  }
-
-  return totals;
-}
-
-function detectProtectedTerms(text) {
-  const terms = [
-    ...findRegexMatches(text, ACRONYM),
-    ...findRegexMatches(text, TECHNICAL_TOKEN),
-    ...findRegexMatches(text, TITLE_CASE_TERM).filter(hasMultipleNameWords),
-  ];
-
-  return removeOverlappingTerms(terms);
-}
-
-function findRegexMatches(text, regex) {
-  const matches = [];
-  regex.lastIndex = 0;
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    matches.push({
-      end: match.index + match[0].length,
-      start: match.index,
-      text: match[0],
-    });
-  }
-
-  return matches;
-}
-
-function hasMultipleNameWords(term) {
-  const nameWords = term.text.split(/\s+/).filter((word) => /^[A-Z][A-Za-z0-9-]*$/.test(word));
-  return nameWords.length >= 2;
-}
-
-function removeOverlappingTerms(terms) {
-  const sorted = [...terms].sort((left, right) => {
-    if (left.start !== right.start) {
-      return left.start - right.start;
-    }
-    return right.end - left.end;
-  });
-
-  const accepted = [];
-  for (const term of sorted) {
-    const overlaps = accepted.some((existing) => term.start < existing.end && term.end > existing.start);
-    if (!overlaps) {
-      accepted.push(term);
-    }
-  }
-
-  return accepted;
-}
-
-function normaliseProtectedTerms(text, protectedTerms) {
-  if (protectedTerms.length === 0) {
-    return text;
-  }
-
-  let result = "";
-  let cursor = 0;
-  for (const term of protectedTerms) {
-    result += text.slice(cursor, term.start);
-    result += placeholderForProtectedTerm(term.text);
-    cursor = term.end;
-  }
-  result += text.slice(cursor);
-  return result;
-}
-
-function placeholderForProtectedTerm(termText) {
-  const words = splitWords(termText);
-  if (words.length === 1) {
-    return "id";
-  }
-
-  return words.map(() => "name").join(" ");
-}
-
-function detectIssues(text, words) {
-  return {
-    adverbs: detectAdverbs(words),
-    complex: detectComplexAlternatives(text),
-    passiveVoice: detectPassiveVoice(text),
-    qualifiers: detectQualifiers(text),
-  };
 }
 
 function detectAdverbs(words) {
@@ -877,158 +326,145 @@ function detectAdverbs(words) {
 }
 
 function detectPassiveVoice(text) {
-  const matches = text.match(/(^|\s)(is|are|was|were|be|been|being)\s([a-z]{2,30})\b(\sby\b)?/gi);
-  if (!matches) {
-    return [];
-  }
-
-  return matches
-    .map((match) => match.trim())
-    .filter((match) => {
-      const participleMatch = match.match(/([a-z]+)\b(\sby\b)?$/i);
-      if (!participleMatch) {
-        return false;
-      }
-
-      const participle = participleMatch[1].toLowerCase();
-      return participle.endsWith("ed") || IRREGULAR_PARTICIPLES.has(participle);
-    });
-}
-
-function detectQualifiers(text) {
-  return detectPhrases(text, QUALIFIERS).map((match) => match.phrase);
-}
-
-function detectComplexAlternatives(text) {
-  return detectPhrases(text, new Set(COMPLEX_ALTERNATIVES.keys())).map((match) => ({
-    phrase: match.phrase,
-    alternatives: COMPLEX_ALTERNATIVES.get(match.phrase),
-  }));
-}
-
-function detectPhrases(text, phrases) {
-  const words = [];
-  const wordPattern = /\b[\w'-]+\b/gi;
+  const passivePattern = /\b(?:is|are|was|were|be|been|being)\s+(?:(?:[a-z]+ly)\s+){0,2}([a-z]{2,30})(?:\s+by\b)?/gi;
+  const signals = [];
   let match;
 
-  while ((match = wordPattern.exec(text)) !== null) {
-    words.push({
-      index: match.index,
-      text: match[0],
-    });
-  }
-
-  const matches = [];
-  for (let index = 0; index < words.length; index += 1) {
-    const candidates = buildPhraseCandidates(words, index);
-    for (const candidate of candidates) {
-      const lowerPhrase = candidate.phrase.toLowerCase();
-      if (phrases.has(lowerPhrase)) {
-        matches.push({
-          phrase: lowerPhrase,
-          index: candidate.index,
-        });
-        break;
-      }
+  while ((match = passivePattern.exec(text)) !== null) {
+    const participle = match[1].toLowerCase();
+    const looksLikeParticiple = participle.endsWith("ed") || IRREGULAR_PARTICIPLES.has(participle);
+    if (looksLikeParticiple && !PASSIVE_ADJECTIVE_EXCEPTIONS.has(participle)) {
+      signals.push(match[0]);
     }
   }
 
-  return matches;
+  return signals;
 }
 
-function buildPhraseCandidates(words, startIndex) {
-  const candidates = [];
-  let phrase = "";
-
-  for (let offset = 0; offset < 4 && words[startIndex + offset]; offset += 1) {
-    phrase = offset === 0 ? words[startIndex].text : `${phrase} ${words[startIndex + offset].text}`;
-    candidates.push({
-      index: words[startIndex].index,
-      phrase,
-    });
-  }
-
-  return candidates.reverse();
+function detectPhrases(text, phrases) {
+  const lowerText = text.toLowerCase();
+  return phrases.filter((phrase) => new RegExp(`\\b${escapeRegex(phrase)}\\b`, "i").test(lowerText));
 }
 
-function printHumanReport(report) {
-  const status = report.passes ? "PASS" : "FAIL";
-  const targetLabel =
-    report.target.minGrade === null
-      ? `target <= ${report.target.maxGrade}`
-      : `target ${report.target.minGrade}-${report.target.maxGrade}`;
-  console.log(`Readability: ${status}`);
-  const gradeLabel =
-    report.stats.rawReadingLevel === report.stats.readingLevel
-      ? `${report.stats.readingLevel}`
-      : `${report.stats.rawReadingLevel} raw (${report.stats.readingLevel} effective for protected terms)`;
-  console.log(`Grade: ${gradeLabel} (${targetLabel})`);
-  console.log(
-    `Words: ${report.stats.words} | Sentences: ${report.stats.sentences} | Letters: ${report.stats.letters}`,
-  );
-  console.log(
-    `Hard: ${report.stats.hardSentences} | Very hard: ${report.stats.veryHardSentences} | Above target: ${report.stats.targetGradeBreaches}`,
-  );
-  console.log(
-    `Adverbs: ${report.stats.adverbs} | Passive voice: ${report.stats.passiveVoice} | Qualifiers: ${report.stats.qualifiers} | Simpler alternatives: ${report.stats.complexWords}`,
-  );
-  if (report.shape.referenceParagraphs !== undefined) {
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function countIssues(sentences, issueName) {
+  return sentences.reduce((total, sentence) => total + sentence.issues[issueName].length, 0);
+}
+
+function buildCandidates(sentences) {
+  return sentences
+    .filter((sentence) => sentence.readability !== "normal" || Object.values(sentence.issues).some((items) => items.length > 0))
+    .map((sentence) => ({
+      location: sentence.location,
+      text: sentence.text,
+      readingGrade: sentence.readingGrade,
+      readability: sentence.readability,
+      observations: sentence.issues,
+    }));
+}
+
+function comparePreservation(reference, candidate) {
+  const referenceTokens = extractPreservedTokens(reference);
+  const candidateTokens = extractPreservedTokens(candidate);
+  const missing = {};
+
+  for (const category of ["headings", "links", "codeSpans", "numbers"]) {
+    const tokens = referenceTokens[category];
+    const candidateCounts = countTokens(candidateTokens[category]);
+    const missingTokens = [];
+    for (const token of tokens) {
+      const key = token.toLowerCase();
+      const available = candidateCounts.get(key) ?? 0;
+      if (available === 0) {
+        missingTokens.push(token);
+      } else {
+        candidateCounts.set(key, available - 1);
+      }
+    }
+    missing[category] = missingTokens;
+  }
+
+  return {
+    missing,
+    markerChange: {
+      source: referenceTokens.modalAndConditions,
+      candidate: candidateTokens.modalAndConditions,
+    },
+  };
+}
+
+function extractPreservedTokens(text) {
+  return {
+    headings: findMatches(text, /^\s{0,3}#{1,6}\s+.+$/gm),
+    links: findMatches(text, /\[[^\]]+\]\([^)]+\)/g),
+    codeSpans: findMatches(text, /`[^`\n]+`/g),
+    numbers: findMatches(text, /\b\d+(?:[.,]\d+)*(?:%|\b)/g),
+    modalAndConditions: MODAL_AND_CONDITION_PATTERNS.flatMap((pattern) => findMatches(text, pattern)),
+  };
+}
+
+function findMatches(text, pattern) {
+  pattern.lastIndex = 0;
+  return text.match(pattern) ?? [];
+}
+
+function countTokens(tokens) {
+  const counts = new Map();
+  for (const token of tokens) {
+    const key = token.toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function printHumanReports(reports) {
+  for (let index = 0; index < reports.length; index += 1) {
+    const report = reports[index];
+    if (reports.length > 1) {
+      console.log(`${index + 1}. ${report.source}`);
+    }
+    console.log(`Reading grade: ${report.stats.readingGrade}`);
+    console.log(`Words: ${report.stats.words} | Sentences: ${report.stats.sentences}`);
+    console.log(`Hard: ${report.stats.hardSentences} | Very hard: ${report.stats.veryHardSentences}`);
     console.log(
-      `Shape: ${report.shape.candidateParagraphs}/${report.shape.referenceParagraphs} paragraphs | ${report.shape.sentenceIncrease} sentence increase (max ${report.shape.maxSentenceIncrease})`,
+      `Adverbs: ${report.stats.adverbs} | Passive voice: ${report.stats.passiveVoice} | Qualifiers: ${report.stats.qualifiers} | Complex terms: ${report.stats.complexTerms}`,
     );
-  }
-
-  if (report.target.minGrade !== null && report.stats.rawReadingLevel < report.target.minGrade) {
-    console.log("");
-    console.log(
-      `Too simple: raw document grade is below ${report.target.minGrade}. Restore nuance, combine short sentences, or keep necessary terms.`,
-    );
-  }
-
-  if (report.shape.referenceParagraphs !== undefined && !report.shape.paragraphCountMatches) {
-    console.log("");
-    console.log("Paragraph shape changed. Preserve the reference paragraph count unless asked otherwise.");
-  }
-
-  if (report.shape.referenceParagraphs !== undefined && !report.shape.sentenceIncreaseAllowed) {
-    console.log("");
-    console.log("Sentence count increased too much. Combine related sentences without exceeding the target grade.");
-  }
-
-  if (report.issues.targetGradeBreaches.length > 0) {
-    console.log("");
-    console.log("Sentences to revise:");
-    for (const sentence of report.issues.targetGradeBreaches) {
-      const gradeLabel =
-        sentence.readingLevel === sentence.effectiveReadingLevel
-          ? `Grade ${sentence.readingLevel}`
-          : `Grade ${sentence.readingLevel}, effective ${sentence.effectiveReadingLevel} after protected terms`;
+    for (const candidate of report.candidates) {
       console.log(
-        `${sentence.paragraphNumber}.${sentence.sentenceNumber} ${gradeLabel}, ${sentence.effectiveReadability}, ${sentence.stats.words} words: ${sentence.text}`,
+        `${candidate.location.paragraph}.${candidate.location.sentence} Grade ${candidate.readingGrade}, ${candidate.readability}: ${candidate.text}`,
       );
+    }
+    if (report.preservation) {
+      console.log(`Missing preserved content: ${JSON.stringify(report.preservation.missing)}`);
+      console.log(
+        `Modal and condition markers: source ${JSON.stringify(report.preservation.markerChange.source)} | candidate ${JSON.stringify(report.preservation.markerChange.candidate)}`,
+      );
+    }
+    if (index < reports.length - 1) {
+      console.log("");
     }
   }
 }
 
 function printHelp() {
   console.log(`Usage:
-  check-english-readability.js --file <path.md> [--reference-file <path.md>] [--max-grade 9] [--min-grade n] [--target NORMAL] [--json]
-  cat text.txt | check-english-readability.js [--max-grade 9]
+  check-english-readability.js [--json] [--target NORMAL] "Text" ["More text"]
+  check-english-readability.js [--json] --file draft.md [--file plan.md]
+  cat draft.txt | check-english-readability.js [--json]
+  check-english-readability.js --reference "Original" "Edited"
+  check-english-readability.js --reference-file original.md --file edited.md
+
+The report is advisory. Reading grades and sentence observations do not decide whether text should change.
 
 Options:
-  --file <path>                 Read text from a file. Markdown files are normalised to visible prose. Use "-" for stdin.
-  --reference-file <path>       Compare paragraph count and sentence increase against the original text after Markdown normalisation.
-  --max-grade <n>               Required maximum document and sentence grade. Default: 9.
-  --min-grade <n>               Optional minimum document grade for explicit band checks. Default: none.
-  --max-sentence-increase <n>   Allowed sentence increase when --reference-file is used. Default: 2.
-  --target <name>               ACCESSIBLE, NORMAL, or TECHNICAL Hemingway thresholds. Default: NORMAL.
-  --json                        Print structured JSON.
-
-Protected terms:
-  Proper nouns, product names, and acronyms are normalised for sentence pass/fail so a sentence is not split only because it contains long names.
-
-Markdown:
-  Files ending .md, .markdown, .mdown, .mkd, or .mkdn are stripped to visible prose before scoring. Front matter, comments, code blocks, reference definitions, and Markdown syntax are removed. Link labels, image alt text, table cells, headings, blockquotes, and list item text are kept.
+  --file <path>            Add a text or Markdown file as an input. May be repeated.
+  --reference <text>       Compare one input with original text for preservation.
+  --reference-file <path>  Compare one input with an original file for preservation.
+  --target <name>          ACCESSIBLE, NORMAL, or TECHNICAL thresholds. Default: NORMAL.
+  --json                   Print structured JSON.
 `);
 }
 
@@ -1039,10 +475,8 @@ if (require.main === module) {
 module.exports = {
   analyseText,
   calculateGrade,
-  classifyReadability,
+  comparePreservation,
   isMarkdownPath,
   prepareInputText,
-  splitSentences,
-  splitWords,
   stripMarkdownForReadability,
 };

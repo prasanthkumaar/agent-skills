@@ -9,7 +9,7 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | Skill | Use when |
 |-------|----------|
 | `build-context` | ≤300w brief from Slack/Notion/memory/codebase before grill |
-| `write-readable-english` | Writes and checks readable English at Grade 9 by default |
+| `write-readable-english` | Makes the smallest useful edit for clarity while preserving meaning and avoiding oversimplification |
 | `docs-check` | Read-only documented-pattern check for framework/library/API/config/test/story changes |
 | `research-options` | Compare broad options before deciding |
 | `manage-agent-skills` | Create, update, install, remove, commit, or publish repo-owned custom skills |
@@ -21,10 +21,9 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | `capture-evidence` | Capture local command/browser/screenshot evidence into an OS-temp manifest |
 | `write-pr-description` | Create draft PRs or update PR descriptions, images, and evidence links |
 | `reply-github-comment` | Post verified GitHub replies only, never resolve threads |
-| `explain-diff-html` | Rich interactive HTML explainer for a diff, branch, PR, or code change |
-| `explain-diff-notion` | Rich Notion explainer for a diff, branch, PR, or code change |
 | `explain-with-html` | Visual temp HTML explainer for code, PRs, diffs, transcripts, and decisions |
 | `research-web` | Bounded source-backed web research |
+| `update-weekly-snippets` | Evidence-backed weekly updates drafted in Slack voice and posted only after approval |
 | `voice-slack` | Draft Slack messages in your voice |
 
 ### Context workflow
@@ -74,7 +73,7 @@ Use **`add` from the local path**, not `update` — `update` pulls from GitHub a
 Refresh all repo skills:
 
 ```bash
-for s in build-context write-readable-english docs-check research-options manage-agent-skills audit-agent-skills audit-claude-usage audit-claude-usage-ledger interview-prep-design-r3 multi-review fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
+for s in build-context write-readable-english docs-check research-options manage-agent-skills audit-agent-skills audit-claude-usage audit-claude-usage-ledger interview-prep-design-r3 multi-review fix-and-verify capture-evidence write-pr-description reply-github-comment explain-with-html research-web update-weekly-snippets voice-slack; do
   npx skills add ~/ai/agent-skills -s "$s" -g -y
 done
 ```

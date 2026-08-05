@@ -1,78 +1,70 @@
 ---
 name: write-readable-english
-description: Writes, rewrites, and checks Markdown prose so it is clear without being flattened. Use when drafting or editing PR descriptions, Notion docs, GitHub comments, docs, announcements, or other Markdown where readable English matters.
+description: Improves English phrases, sentences, paragraphs, and pages with the smallest useful edit while preserving technical meaning and voice. Use when drafting or rewriting prose for clarity without oversimplifying it.
 ---
 
 # Write Readable English
 
-Use this skill to draft clear prose first. Then verify it with the checker script.
+Improve clarity without flattening meaning. Leave already-clear text unchanged or near-unchanged.
 
-```text
-scripts/check-english-readability.js
-```
+## Core Contract
 
-The default target is Grade 9 with no minimum grade.
+- Preserve facts, technical meaning, names, quantities, code, links, scope, conditions, caveats, certainty, tone, and commitments.
+- Add no unsupported claims.
+- Make the minimum necessary edit.
+- Prefer natural cohesion over shorter sentences.
+- Never treat reading grade as a target unless the user explicitly requests one.
+- Keep technical and domain terms. If the user requests a lay explanation, explain the term instead of replacing it with a broader or less precise word.
 
-## Before Writing
+## Workflow
 
-Classify the text before drafting or editing.
+Use `scripts/check-english-readability.js` once on every input, including a phrase, sentence, paragraph, or page.
 
-```text
-Text type: PR description, Notion doc, GitHub comment, Slack message, docs, announcement, review comment, or other.
-Audience: reviewer, team, exec, public user, support, maintainer, or one named person.
-Purpose: explain, decide, persuade, announce, unblock, document, or review.
-```
+1. Infer the audience and purpose from context.
+2. Scan the text once. For multiple inputs, scan them together.
+3. Treat reading grade and hard or very-hard labels, passive voice, adverb, and qualifier matches as mechanical advisory observations.
+4. Identify a concrete clarity problem before editing. A warning is not itself a problem.
+5. Ignore any or all warnings that do not harm clarity. Leave the text unchanged when no useful edit exists.
+6. Make the smallest edit that fixes the concrete problem.
+7. Run the preservation check against the source. Restore missing headings, links, code spans, and numbers unless the change was intentional.
+8. Review missing modal and condition markers semantically. Preserve the original certainty and relationship, but not necessarily the same word.
+9. Stop when the prose is clear enough for its purpose.
 
-If the Markdown file is not a codebase artifact, write draft files in OS temp. Do not put scratch prose in the repo.
+The scan has no pass or fail result. Do not expose its grades or warning labels unless the user asks for diagnostics. Write readable prose directly rather than simplifying mechanically towards a score.
 
-## Draft To Pass
+## Editing Scale
 
-- Put the main actor and action early.
-- Keep one main idea per sentence.
-- Use bullets for lists of conditions, decisions, risks, or steps.
-- Keep domain terms that matter, but make the sentence around them direct.
-- Avoid filler starts and stacked clauses.
-- Avoid hedge words and vague nouns.
-- Preserve facts, names, and links.
-- Keep legal meaning and commitments.
+### Phrase
 
-## Check
+- Change only unclear, vague, or unnatural wording.
+- Preserve established terminology and intended emphasis.
 
-Save the original and candidate Markdown, then run:
+### Sentence
 
-```sh
-node /Users/prasanth/.agents/skills/write-readable-english/scripts/check-english-readability.js --file /tmp/candidate.md --reference-file /tmp/original.md --max-grade 9
-```
+- Fix the specific problem: buried action, ambiguous referent, weak connection, unnecessary repetition, or overloaded structure.
+- Split or join only when it makes the relationship clearer.
 
-For new prose, omit `--reference-file`.
+### Paragraph or Page
 
-## Minimal Rewrite Loop
+- Work section by section.
+- Preserve headings, Markdown, examples, and argument order unless structure is the problem.
+- Do not rewrite clean passages for stylistic uniformity.
 
-1. Run the checker once.
-2. List only failed sentences.
-3. For each failed sentence, name the likely cause.
-4. Make the smallest local edit for that cause.
-5. Do not rewrite clean sentences.
-6. Re-run the checker.
-7. Stop after two passes unless the user asked for polish.
+## Clarity Rules
 
-Common causes:
-
-```text
-too many clauses
-long noun phrase
-stacked abstractions
-passive voice
-vague actor
-punctuation chain
-repeated hedge words
-technical terms
-```
+- Put the actor and action early when that helps.
+- Keep qualifiers and conditions attached to what they modify.
+- When restructuring, keep purposes, expected outcomes, limitations, and contingencies attached to their original subject.
+- Preserve causal, conditional, comparative, temporal, and evidential relationships.
+- Make headings and summaries specific enough to state the actual change or subject; do not leave a vague summary above a clearer body.
+- Use bullets only for genuine lists.
+- Remove filler only when it carries no meaning or tone.
+- Keep long sentences that are clear.
+- Join short sentences when separation weakens cohesion.
+- Respect the source's dialect, voice, formatting, and level of formality.
 
 ## Output
 
-Return the final prose or file path, then include:
-
-```text
-Verified by: check-english-readability.js --file [candidate] --max-grade 9 exited 0
-```
+Return the revised text by default. For file edits, return the file path.
+Briefly explain a material choice only when useful.
+When no edit is necessary, return the original text unchanged; mention that it was unchanged only if the user asks for an explanation.
