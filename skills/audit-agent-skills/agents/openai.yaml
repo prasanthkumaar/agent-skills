@@ -1,0 +1,6 @@
+interface:
+  display_name: "Audit Agent Skills"
+  short_description: "Check skill installation integrity"
+  default_prompt: "Use $audit-agent-skills to audit my installed agent skills without changing them."
+policy:
+  allow_implicit_invocation: false

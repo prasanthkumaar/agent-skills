@@ -9,23 +9,15 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | Skill | Use when |
 |-------|----------|
 | `build-context` | ≤300w brief from Slack/Notion/memory/codebase before grill |
-| `to-plan` | After grill: harness Plan mode, one plan file, ends with `build-pr` step |
-| `build-pr` | Approved plan/current branch → draft PR or stack, internally reviewed and evidence-backed |
-| `update-pr` | Existing PR or stack → apply deltas, rerun review/fix loop, refresh evidence and descriptions |
-| `ready-pr` | Existing PR or stack → start at multi-review and drive findings to readiness |
-| `code-writing` | Document-shaped code with explicit contracts and readable structure |
 | `write-readable-english` | Writes and checks readable English at Grade 9 by default |
 | `docs-check` | Read-only documented-pattern check for framework/library/API/config/test/story changes |
 | `research-options` | Compare broad options before deciding |
 | `manage-agent-skills` | Create, update, install, remove, commit, or publish repo-owned custom skills |
-| `audit-agent-skills` | Read-only provenance and installation-integrity audit across repo, global installs, and Claude links |
+| `audit-agent-skills` | Explicit-only, read-only check of source ownership, content parity, and Claude symlinks |
 | `audit-claude-usage` | Concise chat-only monthly Claude usage and cost summary |
 | `audit-claude-usage-ledger` | Monthly Claude usage audit persisted to the Notion ledger with dated breakdowns |
-| `multi-review` | Run all fresh-context review lanes across a branch or stack |
-| `review-code-quality` | Review repo conventions, code readability, and maintainability smells |
-| `review-spec` | Review whether a diff matches the originating issue, PRD, ticket, or spec |
-| `triage` | Classify review findings, GitHub comments, CI, chat feedback, and manual verification |
-| `fix-and-verify` | Apply triaged fixes with branch-owned fresh-context fix agents |
+| `multi-review` | Run targeted or parallel full-diff review lanes across a branch or stack |
+| `fix-and-verify` | Implement explicitly selected issues and verify the chosen fix approach |
 | `capture-evidence` | Capture local command/browser/screenshot evidence into an OS-temp manifest |
 | `write-pr-description` | Create draft PRs or update PR descriptions, images, and evidence links |
 | `reply-github-comment` | Post verified GitHub replies only, never resolve threads |
@@ -35,34 +27,29 @@ Skills are edited here, then installed globally into `~/.agents/skills/` (Claude
 | `research-web` | Bounded source-backed web research |
 | `voice-slack` | Draft Slack messages in your voice |
 
-### End-to-end workflow
+### Context workflow
 
 ```text
-build-context → grill-me | grill-with-docs → to-plan → build-pr → ready-pr | update-pr
+build-context → grill-me | grill-with-docs
 ```
 
 - **`build-context`** — recon only; [sources](skills/build-context/resources/sources.md)
-- **`to-plan`** — Plan mode; one file at harness default; [template](skills/to-plan/resources/plan-template.md)
-- **`build-pr`** — draft PR creation + deterministic review/fix/evidence loop
-- **`ready-pr`** — existing PR/stack readiness loop when no new requested change is needed
-- **`update-pr`** — existing PR/stack update loop
 
-### PR readiness loop
-
-`build-pr`, `ready-pr`, and `update-pr` are thin orchestrators. They route through:
+### Review and fix workflow
 
 ```text
-code-writing → docs-check/research-options as needed → multi-review → triage → fix-and-verify → capture-evidence → write-pr-description → reply-github-comment
+multi-review → user selects issues and approaches → fix-and-verify → optional multi-review
 ```
 
-`multi-review` runs every review lane for the full branch diff:
+`multi-review` contains six standalone lanes, runs applicable lanes in parallel
+for the full branch diff, and records decision-ready findings:
 
-- `review-docs-check`
-- `review-bug`
-- `review-security`
-- `review-code-quality`
-- `review-spec`
-- `review-pr-accuracy`
+- documentation conformance
+- bugs
+- security
+- code quality
+- spec conformance
+- PR accuracy
 
 Other skills may exist globally (`~/.agents/skills/`) but not yet in this repo — migrate here when you want them versioned.
 
@@ -87,7 +74,7 @@ Use **`add` from the local path**, not `update` — `update` pulls from GitHub a
 Refresh all repo skills:
 
 ```bash
-for s in build-context to-plan build-pr ready-pr update-pr code-writing write-readable-english docs-check research-options manage-agent-skills audit-agent-skills audit-claude-usage audit-claude-usage-ledger interview-prep-design-r3 multi-review review-docs-check review-bug review-security review-code-quality review-spec review-pr-accuracy triage fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
+for s in build-context write-readable-english docs-check research-options manage-agent-skills audit-agent-skills audit-claude-usage audit-claude-usage-ledger interview-prep-design-r3 multi-review fix-and-verify capture-evidence write-pr-description reply-github-comment explain-diff-html explain-diff-notion explain-with-html research-web voice-slack; do
   npx skills add ~/ai/agent-skills -s "$s" -g -y
 done
 ```

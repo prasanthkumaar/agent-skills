@@ -1,61 +1,64 @@
 ---
 name: multi-review
-description: Runs every review lane on the full branch diff using fresh-context read-only reviewer agents, then records raw findings in the review ledger. Use before PR creation, after branch fixes, before updating PR descriptions, or when the user asks for multi-review, multi-subagent review, or full stack review.
+description: Reviews complete branch or PR diffs through independent bug, security, code-quality, documentation, spec, and PR-accuracy lanes. Use for a targeted review concern or a full parallel review of one branch, one PR, or an ordered stack.
 ---
 
 # Multi Review
 
-Runs read-only review lanes. It does not fix, reply, or update PR descriptions.
+Routes targeted and full read-only reviews. It never edits code, pushes,
+comments, resolves threads, or updates PR descriptions.
 
 ## Inputs
 
-- Repo path.
+- Repository path.
 - Branch or ordered stack.
-- Parent branch for each branch.
-- PR numbers and PR description URLs when available.
-- Review ledger path, or permission to create one in OS temp.
+- Fixed parent for each branch.
+- PR body, evidence, issue, ticket, PRD, or spec when available.
 
-## Review lanes
+## Route
 
-Before global lanes, find repo-local review skills:
+1. Resolve the fixed parent and complete branch diff once.
+2. Load only the lane files needed for the request:
+   - functional correctness: [BUG.md](BUG.md)
+   - security: [SECURITY.md](SECURITY.md)
+   - standards and maintainability: [CODE_QUALITY.md](CODE_QUALITY.md)
+   - external documented patterns: [DOCS_CONFORMANCE.md](DOCS_CONFORMANCE.md)
+   - issue, ticket, PRD, or spec: [SPEC.md](SPEC.md)
+   - PR body and evidence: [PR_ACCURACY.md](PR_ACCURACY.md)
+3. For a named concern, run that lane in one fresh, cheaper subagent and
+   return its findings directly.
+4. For a generic, full, multi-lane, or stacked review, follow
+   [ORCHESTRATION.md](ORCHESTRATION.md).
 
-- Look for `SKILL.md` files under `./.agents/skills/review-*` and `./.claude/skills/review-*` in the target repo.
-- Read each local review skill before spawning its reviewer.
-- Run matching local review skills as extra read-only lanes for every branch. For example, run repo-local `review-typescript` when the branch touches TypeScript or TSX files.
-- If the local skill's trigger scope is unclear, run it and record raw findings. `triage` owns validity decisions.
-- If `.agents` and `.claude` contain the same review skill with identical Markdown, run it once and record both source paths. If the contents differ, run both as separate local lanes.
-- Local review skills add repo-specific judgement. They do not replace the global lanes below.
+## Defaults
 
-Run all global lanes for every branch:
+- “Review this PR” means a full review.
+- A named concern such as security or spec coverage runs only that lane.
+- Give every selected lane the complete diff against the same fixed parent.
+- Review stacks bottom-up.
+- Do not discover repository-local review skills.
+- Choose an available cheaper subagent without naming or hard-coding a model.
 
-- `review-docs-check`
-- `review-bug`
-- `review-security`
-- `review-code-quality`
-- `review-spec`
-- `review-pr-accuracy`
+## Finding shape
 
-Each lane gets the whole branch diff against its parent, not changed-file slices.
+Every finding states:
 
-## Stack order
+- location
+- issue
+- evidence
+- what happens if it is not addressed
+- credible options and each option's trade-off
+- recommended option and why
 
-Review bottom-up. If a child branch finding belongs in a parent, record the parent as owner. `triage` can route the fix before review continues upward.
+Do not invent alternatives when one clear fix exists.
 
-## Ledger
+## Examples
 
-Use [resources/review-ledger.md](resources/review-ledger.md).
-
-- Create a ledger in OS temp if missing.
-- Reuse the active ledger when repo, PR numbers, and branch stack match.
-- Append raw findings only.
-- Do not judge whether a finding is valid, a tradeoff, or already addressed. `triage` owns that.
-
-## Output
-
-Return a concise branch-by-branch summary plus the ledger path.
+- “Security-review this PR” runs `SECURITY.md` only.
+- “Run a full review on this stack” runs every applicable lane in parallel.
 
 ## Hard rules
 
 - Read-only.
-- Fresh-context reviewers.
-- Reviewer agents never edit, push, comment, resolve threads, or update PR bodies.
+- Prefer fewer high-confidence findings.
+- Never report a clean review while an applicable lane is incomplete.
