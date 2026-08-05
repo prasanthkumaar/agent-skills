@@ -1,0 +1,4 @@
+interface:
+  display_name: "Update Weekly Snippets"
+  short_description: "Draft evidence-backed weekly updates"
+  default_prompt: "Use $update-weekly-snippets to prepare my evidence-backed weekly update for review."

@@ -7,144 +7,81 @@ const os = require("os");
 const path = require("path");
 const { spawnSync } = require("child_process");
 
-const {
-  isMarkdownPath,
-  prepareInputText,
-  stripMarkdownForReadability,
-} = require("./check-english-readability");
-
 const CLI_PATH = path.join(__dirname, "check-english-readability.js");
 
-runTests();
+testMultipleInputsAndMarkdownFile();
+testStdinAndRichObservations();
+testPreservationComparison();
+testSentenceSplittingAndPassiveSignals();
+console.log("check-english-readability tests passed");
 
-function runTests() {
-  testMarkdownPathDetection();
-  testMarkdownHappyCase();
-  testMarkdownEdgeCases();
-  testNonMarkdownInputIsUnchanged();
-  testCliAcceptsMarkdownAndScoresVisibleProseOnly();
-  console.log("check-english-readability tests passed");
-}
+function testMultipleInputsAndMarkdownFile() {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "readability-"));
+  const markdownPath = path.join(tempDirectory, "draft.md");
+  fs.writeFileSync(markdownPath, "# Update\n\nClear Markdown text.\n");
 
-function testMarkdownPathDetection() {
-  assert.equal(isMarkdownPath("/tmp/draft.md"), true);
-  assert.equal(isMarkdownPath("/tmp/draft.MARKDOWN"), true);
-  assert.equal(isMarkdownPath("/tmp/draft.txt"), false);
-  assert.equal(isMarkdownPath("-"), false);
-  assert.equal(isMarkdownPath(undefined), false);
-}
+  const result = runCli(["--json", "First text.", "Second text.", "--file", markdownPath]);
+  assert.equal(result.status, 0, result.stderr);
 
-function testMarkdownHappyCase() {
-  const markdown = [
-    "# Release note",
-    "",
-    "We fixed the billing flow for new teams.",
-    "",
-    "- Checkout now shows the right tax.",
-    "- Admins can resend invites from **Team settings**.",
-    "",
-    "Read the [migration guide](https://example.com/guide) before rollout.",
-  ].join("\n");
-
-  assert.equal(
-    stripMarkdownForReadability(markdown),
-    [
-      "Release note",
-      "",
-      "We fixed the billing flow for new teams.",
-      "",
-      "Checkout now shows the right tax.",
-      "Admins can resend invites from Team settings.",
-      "",
-      "Read the migration guide before rollout.",
-    ].join("\n"),
-  );
-}
-
-function testMarkdownEdgeCases() {
-  const markdown = [
-    "---",
-    "title: Hidden metadata",
-    "---",
-    "",
-    "<!-- hidden comment -->",
-    "",
-    "## Visible heading ##",
-    "",
-    "> A quoted line with `inline code` and <strong>HTML</strong>.",
-    "",
-    "```js",
-    "const ignored = true;",
-    "```",
-    "",
-    "    ignoredIndentedCode();",
-    "",
-    "![Diagram alt text](./diagram.png)",
-    "",
-    "| Name | Status |",
-    "| ---- | ------ |",
-    "| Import | Ready |",
-    "",
-    "[hidden-ref]: https://example.com",
-    "",
-    "1. [x] Ship the **small** update.",
-    "2. Use `.md` files in the checker.",
-    "",
-    "---",
-  ].join("\n");
-
-  assert.equal(
-    stripMarkdownForReadability(markdown),
-    [
-      "Visible heading",
-      "",
-      "A quoted line with inline code and HTML.",
-      "",
-      "Diagram alt text",
-      "",
-      "Name. Status",
-      "",
-      "Import. Ready",
-      "",
-      "Ship the small update.",
-      "Use .md files in the checker.",
-    ].join("\n"),
-  );
-}
-
-function testNonMarkdownInputIsUnchanged() {
-  const text = "# This remains plain text.";
-  assert.equal(prepareInputText(text, "/tmp/plain.txt"), text);
-}
-
-function testCliAcceptsMarkdownAndScoresVisibleProseOnly() {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "readability-md-"));
-  const markdownPath = path.join(tempDir, "candidate.md");
-  fs.writeFileSync(
-    markdownPath,
-    [
-      "# Team update",
-      "",
-      "We fixed the import flow for new teams.",
-      "",
-      "```",
-      "Antidisestablishmentarianism Antidisestablishmentarianism Antidisestablishmentarianism.",
-      "```",
-    ].join("\n"),
-  );
-
-  const result = spawnSync(
-    process.execPath,
-    [CLI_PATH, "--file", markdownPath, "--max-grade", "9", "--json"],
-    { encoding: "utf8" },
-  );
-
-  assert.equal(result.status, 0, result.stderr || result.stdout);
   const report = JSON.parse(result.stdout);
-  assert.equal(report.passes, true);
-  assert.equal(report.stats.sentences, 2);
+  assert.equal(report.inputs.length, 3);
+  assert.equal(report.inputs[2].stats.sentences, 2);
+}
+
+function testStdinAndRichObservations() {
+  const text = "The implementation was carefully reviewed, and perhaps additional documentation should be provided before deployment commences.";
+  const result = runCli(["--json"], text);
+  assert.equal(result.status, 0, result.stderr);
+
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.candidates[0].readability, "veryHard");
+  assert.deepEqual(report.candidates[0].observations.adverbs, ["carefully"]);
+  assert.deepEqual(report.candidates[0].observations.qualifiers, ["perhaps"]);
+  assert.deepEqual(report.candidates[0].observations.complexTerms, ["additional"]);
+  assert.ok(report.candidates[0].observations.passiveVoice.length > 0);
+  assert.equal(Object.hasOwn(report, "passes"), false);
+  assert.doesNotMatch(result.stdout, /"(?:pass|fail)(?:es)?"\s*:/i);
+}
+
+function testPreservationComparison() {
+  const original = "# Plan\n\nUse `db plan` from the [guide](https://example.test) only if 30 users may join.";
+  const edited = "# Plan\n\nUse the guide if users join.";
+  const result = runCli(["--json", "--reference", original, edited]);
+  assert.equal(result.status, 0, result.stderr);
+
+  const preservation = JSON.parse(result.stdout).preservation;
+  const missing = preservation.missing;
+  assert.deepEqual(missing.headings, []);
+  assert.deepEqual(missing.links, ["[guide](https://example.test)"]);
+  assert.deepEqual(missing.codeSpans, ["`db plan`"]);
+  assert.deepEqual(missing.numbers, ["30"]);
+  assert.equal(Object.hasOwn(missing, "modalAndConditions"), false);
+  assert.ok(preservation.markerChange.source.includes("only if"));
+  assert.ok(preservation.markerChange.source.includes("may"));
+  assert.deepEqual(preservation.markerChange.candidate, ["if"]);
+}
+
+function testSentenceSplittingAndPassiveSignals() {
+  const text = "Dr. Smith measured 3.14 seconds. The operator is tired. The change was carefully reviewed by the operator.";
+  const result = runCli(["--json", text]);
+  assert.equal(result.status, 0, result.stderr);
+
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.stats.sentences, 3);
   assert.deepEqual(
-    report.sentences.map((sentence) => sentence.text),
-    ["Team update", "We fixed the import flow for new teams"],
+    report.candidates.flatMap((candidate) => candidate.observations.passiveVoice),
+    ["was carefully reviewed by"],
   );
+
+  const exactSplit = JSON.parse(
+    runCli(["--json", "Dr. Smith measured 3.14 seconds. The API was stable."]).stdout,
+  );
+  assert.equal(exactSplit.stats.sentences, 2);
+}
+
+function runCli(argumentsList, stdin) {
+  return spawnSync(process.execPath, [CLI_PATH, ...argumentsList], {
+    encoding: "utf8",
+    input: stdin,
+  });
 }

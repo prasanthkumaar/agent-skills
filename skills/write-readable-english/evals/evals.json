@@ -1,0 +1,98 @@
+[
+  {
+    "id": "technical-heading-no-op",
+    "genre": "api-documentation-heading",
+    "input": "Idempotency key rotation",
+    "expected": "Idempotency key rotation",
+    "preserve": ["Idempotency key rotation"],
+    "source": "https://design.education.gov.uk/content-design/plain-language"
+  },
+  {
+    "id": "phrase-nominalisation-repair",
+    "genre": "phrase",
+    "input": "Carry out completion of the database migration",
+    "expected": "Complete the database migration",
+    "preserve": ["database migration"],
+    "source": "https://digital.gov/guides/plain-language/writing"
+  },
+  {
+    "id": "sentence-logical-chain-no-op",
+    "genre": "sentence",
+    "input": "If the primary health check fails twice, the deployer must stop the release, retain the logs for 30 days, and notify the incident owner before another attempt begins.",
+    "expected": "If the primary health check fails twice, the deployer must stop the release, retain the logs for 30 days, and notify the incident owner before another attempt begins.",
+    "preserve": ["If", "fails twice", "must", "30 days", "before another attempt begins"],
+    "source": "https://hemingwayapp.com/help/docs/readability"
+  },
+  {
+    "id": "sentence-ambiguous-actor-repair",
+    "genre": "sentence",
+    "input": "After reviewing the timeout logs, the retry limit was increased by the operator.",
+    "expected": "After reviewing the timeout logs, the operator increased the retry limit.",
+    "preserve": ["timeout logs", "operator", "retry limit"],
+    "source": "https://digital.gov/guides/plain-language/writing"
+  },
+  {
+    "id": "instruction-condition-before-action",
+    "genre": "instruction",
+    "input": "Use `db plan` before `db migrate`, which should run only if the plan confirms that no tables will be dropped.",
+    "expected": "1. Run `db plan`.\n2. Run `db migrate` only if the plan confirms that no tables will be dropped.",
+    "preserve": ["`db plan`", "`db migrate`", "confirms that no tables will be dropped"],
+    "source": "https://developers.google.com/style/procedures"
+  },
+  {
+    "id": "instruction-passive-no-op",
+    "genre": "instruction",
+    "input": "The checksum must be verified before the package is installed.",
+    "expected": "The checksum must be verified before the package is installed.",
+    "preserve": ["checksum", "must", "before", "package", "installed"],
+    "source": "https://www.gov.uk/government/publications/drafting-bills-for-parliament/2024-03-19-drafting-guidance"
+  },
+  {
+    "id": "technical-doc-api-repair",
+    "genre": "technical-documentation",
+    "input": "When `cache.get(key)` returns `null`, which can happen after an eviction or before the key has been written, callers that require a value should use `cache.load(key)` because it repopulates the cache and returns the stored record.",
+    "expected": "`cache.get(key)` can return `null` after an eviction or before the key has been written. If a caller requires a value, use `cache.load(key)` to repopulate the cache and return the stored record.",
+    "preserve": ["`cache.get(key)`", "`null`", "eviction", "before the key", "`cache.load(key)`", "stored record"],
+    "source": "https://developers.google.com/tech-writing/one/clear-sentences"
+  },
+  {
+    "id": "technical-doc-limit-no-op",
+    "genre": "technical-documentation",
+    "input": "Above 10,000 requests per minute, the dashboard may undercount retries by up to 3% because batch updates can be delayed for 60 seconds.",
+    "expected": "Above 10,000 requests per minute, the dashboard may undercount retries by up to 3% because batch updates can be delayed for 60 seconds.",
+    "preserve": ["Above 10,000 requests per minute", "may", "up to 3%", "because", "60 seconds"],
+    "source": "https://hemingwayapp.com/help/docs/readability"
+  },
+  {
+    "id": "pr-description-summary-repair",
+    "genre": "pr-description",
+    "input": "## Summary\n\nFixes upload retries.\n\n## Why\n\nAfter one upload times out, the current flow restarts successful uploads, repeats network work, and slows recovery.",
+    "expected": "## Summary\n\nPrevents successful uploads from restarting when one upload times out.\n\n## Why\n\nThe current flow restarts successful uploads, repeats network work, and slows recovery.",
+    "preserve": ["## Summary", "one upload times out", "## Why", "uploads", "network work", "recovery"],
+    "source": "https://google.github.io/eng-practices/review/developer/cl-descriptions.html"
+  },
+  {
+    "id": "pr-description-structure-repair",
+    "genre": "pr-description",
+    "input": "## Change\n\nThis replaces the synchronous export with a queued export to prevent request timeouts, keeps the existing CSV format, was tested with small and large exports, can delay completion by up to two minutes, and still does not support cancelling a queued export. Please review the queue retry policy first.",
+    "expected": "## Change\n\nThis PR replaces the synchronous export with a queued export to prevent request timeouts. The CSV format is unchanged.\n\n## Verification\n\nTested with small and large exports.\n\n## Trade-offs\n\n- Completion can be delayed by up to two minutes.\n- Queued exports still cannot be cancelled.\n\n## Review focus\n\nReview the queue retry policy first.",
+    "preserve": ["queued export", "request timeouts", "CSV format", "small and large exports", "up to two minutes", "cancel", "queue retry policy", "first"],
+    "source": "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/getting-started/helping-others-review-your-changes"
+  },
+  {
+    "id": "research-plan-aim-repair",
+    "genre": "research-plan",
+    "input": "We hypothesise that intermittent network delay reduces completion rates because users repeat submissions, and Aim 1 will test this with a controlled latency experiment across three delay bands to determine whether retries mediate the effect; we expect the middle band to show the largest increase in repeated submissions, and the experiment will identify where retry safeguards are needed, while an observational log analysis will be used if recruitment is insufficient.",
+    "expected": "We hypothesise that intermittent network delay reduces completion rates because users repeat submissions. Aim 1 will test this with a controlled latency experiment across three delay bands to determine whether retries mediate the effect. We expect the middle band to show the largest increase in repeated submissions. The experiment will identify where retry safeguards are needed. If recruitment is insufficient, we will use an observational log analysis.",
+    "preserve": ["We hypothesise", "intermittent network delay", "completion rates", "repeat submissions", "Aim 1", "controlled latency experiment", "three delay bands", "retries mediate the effect", "middle band", "retry safeguards", "observational log analysis", "recruitment is insufficient"],
+    "source": "https://www.grants.nih.gov/grants-process/write-application/advice-on-application-sections"
+  },
+  {
+    "id": "structured-research-page-repair",
+    "genre": "structured-markdown-page",
+    "input": "## Significance\n\nDelayed detection increases recovery time because responders act on incomplete traces. Earlier detection may reduce failed retries and shorten incidents.\n\n## Innovation\n\nThe study combines trace data with controlled fault injection, allowing the same failure to be observed under repeatable load conditions.\n\n## Approach\n\nWe will first reproduce the fault with the [test protocol](./protocol.md) and remove invalid traces using the criteria defined there, then compare three detection rules using the same traces, report precision and recall with 95% confidence intervals, and record processing time for each rule so operational cost can be compared; if fewer than 200 valid traces remain after filtering, we will treat the comparison as exploratory rather than confirmatory.",
+    "expected": "## Significance\n\nDelayed detection increases recovery time because responders act on incomplete traces. Earlier detection may reduce failed retries and shorten incidents.\n\n## Innovation\n\nThe study combines trace data with controlled fault injection, allowing the same failure to be observed under repeatable load conditions.\n\n## Approach\n\n1. We will reproduce the fault with the [test protocol](./protocol.md).\n2. We will remove invalid traces using the criteria defined in the protocol.\n3. We will compare three detection rules using the same traces.\n4. We will report precision and recall with 95% confidence intervals and record processing time for each rule so operational cost can be compared.\n\nIf fewer than 200 valid traces remain after filtering, we will treat the comparison as exploratory rather than confirmatory.",
+    "preserve": ["## Significance", "incomplete traces", "may", "## Innovation", "controlled fault injection", "repeatable load conditions", "## Approach", "[test protocol](./protocol.md)", "invalid traces", "three detection rules", "same traces", "precision and recall", "95% confidence intervals", "processing time", "operational cost", "fewer than 200 valid traces", "exploratory rather than confirmatory"],
+    "source": "https://www.grants.nih.gov/grants-process/write-application/advice-on-application-sections"
+  }
+]
