@@ -13,7 +13,7 @@ Keep `~/ai/agent-skills/skills/<skill-name>/` as the source of truth. Installed 
 1. Confirm the requested skill name and operation: create, update, install, remove, or publish.
 2. Read `~/ai/agent-skills/README.md` and the target skill. For a new or rewritten prompt, load `write-a-skill`.
 3. Run `git -C ~/ai/agent-skills status --short`. Record unrelated changes and do not stage, alter, revert, or commit them.
-4. Define proof before changing anything: structural validation and scoped Git diff before the draft PR; merge, source/install parity, manager inventory, and Claude link after merge.
+4. Define proof before changing anything: structural validation and scoped Git diff before the ready PR; merge, source/install parity, manager inventory, and Claude link after merge.
 
 ## Create or update
 
@@ -51,9 +51,9 @@ npx skills remove <skill-name> -g
 
 4. Verify that the source, global installation, and Claude entry are absent and that the global inventory no longer lists the skill.
 
-## Publish as a draft PR
+## Publish as a ready PR
 
-Publish only after validation and explicit user approval. A push is incomplete until its non-`main` branch has an open draft PR to `main`.
+Publish only after validation and explicit user approval. A push is incomplete until its non-`main` branch has an open ready-for-review PR to `main`.
 
 ```bash
 git -C ~/ai/agent-skills diff --check
@@ -67,11 +67,11 @@ git -C ~/ai/agent-skills push -u origin HEAD
 
 Include explicitly requested index or documentation paths in the scoped diff and add commands. Inspect the staged diff before committing. Never publish directly from `main`.
 
-After every push, inspect the current branch with `gh pr view --json url,state,isDraft,headRefName,baseRefName`. If no PR exists, create one with `gh pr create --draft --base main --head <branch> --fill`. Reuse an existing open draft; never duplicate it or silently convert a ready PR back to draft. Confirm the remote commit and return the draft PR URL, then stop without installing.
+After every push, inspect the current branch with `gh pr view --json url,state,isDraft,headRefName,baseRefName`. If no PR exists, create one with `gh pr create --base main --head <branch> --fill`. If the existing PR is a draft, run `gh pr ready <PR>`. Reuse an existing open PR; never duplicate it. Verify `state` is `OPEN`, `isDraft` is `false`, the base is `main`, and the remote contains the commit. Return the ready PR URL, then stop without installing.
 
 ## Install after merge
 
-Continue only after the user says the draft PR was merged. Verify `gh pr view <PR> --json state,mergedAt,mergeCommit,url` reports `MERGED`, fetch `origin/main`, and confirm the published commit is its ancestor. Safely synchronise the source checkout to `origin/main`; never switch, reset, or overwrite unrelated work.
+Continue only after the user says the PR was merged. Verify `gh pr view <PR> --json state,mergedAt,mergeCommit,url` reports `MERGED`, fetch `origin/main`, and confirm the published commit is its ancestor. Safely synchronise the source checkout to `origin/main`; never switch, reset, or overwrite unrelated work.
 
 Install only the named skill from the merged source, using `-y` only for intentional unattended acceptance:
 
@@ -91,9 +91,9 @@ Require an empty diff, a Claude path resolving to `~/.agents/skills/<skill-name>
 - Never run `npx skills check` as an audit or help probe; it may update installations.
 - Never create project-local `.agents/skills` while performing a global install.
 - Never stage, commit, or push unrelated dirty work.
-- Never install an unmerged skill or report a push as published before verifying its draft PR.
-- Stop on validation, commit, push, draft-PR, merge, install, comparison, link, or inventory failure and report the exact evidence.
+- Never install an unmerged skill or report a push as published before verifying its ready PR.
+- Stop on validation, commit, push, ready-PR, merge, install, comparison, link, or inventory failure and report the exact evidence.
 
 ## Report
 
-Before merge, return the changed paths, validation result, commit SHA, remote branch, draft PR URL, and `installation deferred until merge`. After merge, add merge and installation proof. End with `Verified by: <evidence>`.
+Before merge, return the changed paths, validation result, commit SHA, remote branch, ready PR URL, and `installation deferred until merge`. After merge, add merge and installation proof. End with `Verified by: <evidence>`.
